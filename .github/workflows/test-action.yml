@@ -1,0 +1,70 @@
+name: Test Action
+
+on:
+  pull_request:
+    branches: [github_provider]
+  workflow_dispatch:
+
+jobs:
+  # Mode D — extract CWEs from scan results, no instruction file, no commit-back.
+  # Uses a minimal inline SARIF so no scanner needs to run.
+  mode-d:
+    name: Mode D (extract CWEs)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write minimal SARIF
+        run: |
+          cat > scan.json << 'EOF'
+          {
+            "runs": [{
+              "tool": { "driver": { "name": "snyk", "rules": [
+                { "id": "CWE-89", "properties": { "cwe": ["CWE-89"] } }
+              ]}},
+              "results": [{ "ruleId": "CWE-89", "message": { "text": "SQL injection" } }]
+            }]
+          }
+          EOF
+
+      - name: Run Aspen (Mode D)
+        uses: ./
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
+          scan_results_path: scan.json
+
+  # Mode A — full scan + instruction rewrite, auto_commit disabled so no push needed.
+  mode-a-no-commit:
+    name: Mode A (no commit-back)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write minimal SARIF
+        run: |
+          cat > scan.json << 'EOF'
+          {
+            "runs": [{
+              "tool": { "driver": { "name": "snyk", "rules": [
+                { "id": "CWE-89", "properties": { "cwe": ["CWE-89"] } }
+              ]}},
+              "results": [{ "ruleId": "CWE-89", "message": { "text": "SQL injection" } }]
+            }]
+          }
+          EOF
+
+      - name: Run Aspen (Mode A, no commit)
+        uses: ./
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
+          scan_results_path: scan.json
+          instruction_file_path: .github/CLAUDE.md
+          auto_commit: 'false'
