@@ -1,21 +1,11 @@
 /**
- * Derives the direct (my.) domain from the public API gateway domain.
- * Used for SSE endpoints that cannot route through the API gateway.
- *
- * "api.securityjourney.com" → "my.securityjourney.com"
- * "api.securityjourney.dev" → "my.securityjourney.dev"
- *
- * If the domain does not start with "api.", it is returned unchanged
- * (supports callers who pass a direct domain explicitly).
+ * Rewrites "api.securityjourney.com" → "my.securityjourney.com".
+ * Domains that don't start with "api." are returned unchanged.
  */
 export function deriveDirectDomain(apiDomain) {
   return apiDomain.replace(/^api\./, 'my.');
 }
 
-/**
- * Exchanges a raw Aspen API token for a short-lived JWT.
- * Used for SSE endpoints (Modes A, B) that connect directly to the backend.
- */
 export async function exchangeTokenForJwt(apiDomain, apiToken) {
   console.log(`[aspen-connector] Exchanging API token for JWT...`);
 

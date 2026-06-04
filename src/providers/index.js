@@ -19,10 +19,6 @@ export function detectProvider() {
   );
 }
 
-/**
- * Returns the CallerSource enum name for this platform, matching the
- * CallerSource enum in cwes.proto (SOURCE_GITHUB, SOURCE_GITLAB).
- */
 export function detectSource() {
   if (process.env.GITLAB_CI === 'true')      return 'SOURCE_GITLAB';
   if (process.env.GITHUB_ACTIONS === 'true') return 'SOURCE_GITHUB';

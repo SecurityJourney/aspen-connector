@@ -1,7 +1,7 @@
 {
   "name": "@securityjourney/aspen-connector",
   "version": "0.1.0",
-  "description": "Aspen CI connector — Guardian AI and Adapt for GitHub and GitLab",
+  "description": "CI connector for SecurityJourney Aspen (Guardian AI and Adapt)",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -19,18 +19,27 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SecurityJourney/aspen-connector"
+    "url": "git+https://github.com/SecurityJourney/aspen-connector.git"
+  },
+  "homepage": "https://github.com/SecurityJourney/aspen-connector#readme",
+  "bugs": {
+    "url": "https://github.com/SecurityJourney/aspen-connector/issues"
   },
   "keywords": [
     "security",
     "guardian",
     "adapt",
+    "sast",
+    "cwe",
     "gitlab",
     "github",
     "ci",
-    "sast",
-    "cwe"
+    "ai",
+    "securityjourney"
   ],
-  "author": "SecurityJourney",
-  "license": "ISC"
+  "author": {
+    "name": "SecurityJourney",
+    "url": "https://www.securityjourney.com"
+  },
+  "license": "Apache-2.0"
 }

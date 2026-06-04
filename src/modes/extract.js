@@ -39,7 +39,6 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
     ...(git ? { git } : {}),
   };
 
-  // Call the extract-CWEs endpoint through the API gateway (raw API key, no JWT exchange)
   const apiUrl = `https://${apiDomain}/guardian/scan/extract-cwes`;
   console.log('[aspen-connector] Extracting CWEs from scan results...');
 

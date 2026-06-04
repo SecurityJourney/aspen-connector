@@ -1,11 +1,4 @@
-/**
- * Unified input resolver.
- *
- * Phase 1 (GitLab): reads from ASPEN_* environment variables.
- * Phase 2 (GitHub): will read via @actions/core.getInput() when running in GitHub Actions.
- *
- * Input name mapping: "scan_results_path" -> ASPEN_SCAN_RESULTS_PATH
- */
+// Input name mapping: "scan_results_path" → ASPEN_SCAN_RESULTS_PATH
 
 export function getInput(name) {
   const envKey = `ASPEN_${name.toUpperCase().replace(/-/g, '_')}`;

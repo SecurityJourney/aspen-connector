@@ -6,13 +6,8 @@ import { buildGitBlock } from '../lib/git.js';
 import { getInput } from '../inputs.js';
 
 /**
- * Mode A: scan results + instruction file → Guardian AI (streaming) → commit-back + CWE recording
- * Mode B: CWE list + instruction file → Guardian AI (streaming) → commit-back + CWE recording
- *
- * Provide either `scanResultsPath` (Mode A) or `cwes` (Mode B) — not both.
- *
- * CWE recording happens on the Aspen backend when git metadata is present and the tenant
- * has CWE recording enabled. The package signals this by including the `git` block in the request.
+ * Guardian AI mode: streams updated instructions from the API and commits them back.
+ * Provide either `scanResultsPath` (scan results file) or `cwes` (explicit CWE list).
  */
 export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   const {
@@ -27,7 +22,6 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
     disableAdapt,     // when true, omit the git block → Guardian AI only, no CWE recording
   } = inputs;
 
-  // SSE endpoints cannot route through the API gateway — derive the direct backend domain
   const directDomain = deriveDirectDomain(apiDomain);
 
   // Exchange token for JWT
@@ -62,8 +56,6 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   // Collect git metadata from the platform provider
   const metadata = await provider.getMetadata();
 
-  // Build the `git` block — presence of this block is what enables CWE recording on the backend.
-  // Omitted when ASPEN_DISABLE_ADAPT=true (Guardian AI only run) or when git metadata is unavailable.
   const git = disableAdapt ? null : buildGitBlock(metadata, excludeGitMetadataFields);
   if (disableAdapt) {
     console.log('[aspen-connector] Adapt disabled — CWE recording will be skipped');
@@ -82,7 +74,6 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
     ...(git ? { git } : {}),
   };
 
-  // Call Guardian AI directly (SSE bypasses the API gateway)
   const apiUrl = `https://${directDomain}/svc/guardian`;
   console.log('[aspen-connector] Calling Guardian API...');
 
