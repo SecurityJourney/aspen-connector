@@ -25,6 +25,13 @@ import { resolve } from 'path';
  */
 export class GitHubProvider {
   async getMetadata() {
+    const eventName = process.env.GITHUB_EVENT_NAME;
+    if (eventName !== 'pull_request' && eventName !== 'push') {
+      throw new Error(`Unsupported GitHub Actions event "${eventName}". Aspen supports pull_request and push events only.`);
+    }
+
+    const isPR = eventName === 'pull_request';
+
     const ref = process.env.GITHUB_REF ?? '';
     const prMatch = ref.match(/refs\/pull\/(\d+)\//);
     const prNumber = prMatch ? parseInt(prMatch[1], 10) : null;
@@ -39,8 +46,15 @@ export class GitHubProvider {
     const committerEmail = gitLog.stdout?.trim();
     if (!committerEmail) throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
 
+    // For pull_request events, GITHUB_SHA is the synthetic merge commit GitHub creates
+    // to preview the merge — not the actual PR branch head. Use HEAD^2 instead, which
+    // is the second parent of the merge commit (the real PR head commit).
+    const headSha = isPR
+      ? spawnSync('git', ['rev-parse', 'HEAD^2'], { encoding: 'utf8' }).stdout?.trim()
+      : process.env.GITHUB_SHA;
+
     return {
-      headSha:        process.env.GITHUB_SHA,
+      headSha,
       committerEmail,
       repo:           process.env.GITHUB_REPOSITORY,
       username: actor,
