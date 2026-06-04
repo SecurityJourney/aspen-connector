@@ -1,0 +1,37 @@
+name: Test GitHub Provider
+
+on:
+  pull_request:
+    branches: [github_provider3]
+  workflow_dispatch:
+
+jobs:
+  mode-a-commit-back:
+    name: Mode A (scan results + instructions + commit-back)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write minimal SARIF
+        run: |
+          cat > scan.json << 'EOF'
+          {
+            "runs": [{
+              "tool": { "driver": { "name": "snyk", "rules": [
+                { "id": "CWE-89", "properties": { "cwe": ["CWE-89"] } }
+              ]}},
+              "results": [{ "ruleId": "CWE-89", "message": { "text": "SQL injection" } }]
+            }]
+          }
+          EOF
+
+      - name: Run Aspen (Mode A with commit-back)
+        uses: ./
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
+          scan_results_path: scan.json
+          instruction_file_path: .github/CLAUDE.md
