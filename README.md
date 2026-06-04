@@ -1,6 +1,6 @@
 # @securityjourney/aspen-connector
 
-CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI**.
+CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI** and **GitHub Actions**.
 
 ---
 
@@ -95,6 +95,61 @@ aspen:
 
 ---
 
+## GitHub Actions
+
+### Mode A — Rewrite instructions from scan results
+
+```yaml
+jobs:
+  aspen:
+    permissions:
+      contents: write   # required for commit-back
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Aspen
+        run: npx @securityjourney/aspen-connector
+        env:
+          ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          ASPEN_SCAN_RESULTS_PATH: results.sarif
+          ASPEN_INSTRUCTION_FILE_PATH: .github/ai-instructions.md
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ASPEN_SCANNER_TYPE is optional — auto-detected from scan results
+```
+
+### Mode B — Rewrite instructions from a CWE list
+
+```yaml
+- name: Run Aspen
+  run: npx @securityjourney/aspen-connector
+  env:
+    ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    ASPEN_CWES: '["CWE-79","CWE-89"]'
+    ASPEN_INSTRUCTION_FILE_PATH: .github/ai-instructions.md
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Mode C — Record a CWE list (no instruction update)
+
+```yaml
+- name: Run Aspen
+  run: npx @securityjourney/aspen-connector
+  env:
+    ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    ASPEN_CWES: '["CWE-79","CWE-89"]'
+```
+
+### Mode D — Extract and record CWEs from scan results
+
+```yaml
+- name: Run Aspen
+  run: npx @securityjourney/aspen-connector
+  env:
+    ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    ASPEN_SCAN_RESULTS_PATH: results.sarif
+```
+
+---
+
 ## Commit-back setup
 
 ### GitLab — `CI_JOB_TOKEN`
@@ -114,6 +169,18 @@ script:
 ```
 
 The connector configures git identity automatically (`aspen-bot` by default, or the pipeline user's identity if `GITLAB_USER_EMAIL` / `GITLAB_USER_NAME` are set).
+
+### GitHub Actions — `GITHUB_TOKEN`
+
+Pass `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` in the step env and set `contents: write` on the job. The connector handles authentication automatically — no additional git config steps required.
+
+To override the git identity used for the commit:
+
+```yaml
+env:
+  ASPEN_GIT_USER_EMAIL: my-bot@example.com
+  ASPEN_GIT_USER_NAME: My Bot
+```
 
 ---
 
