@@ -103,7 +103,7 @@ export class GitHubProvider {
     run('git', ['commit', '-m', message]);
     console.log('[aspen-connector] Committed changes');
 
-    run('git', ['push', 'origin', `HEAD:${branch}`]);
+    run('git', ['push', '--force-with-lease', 'origin', `HEAD:${branch}`]);
     console.log(`[aspen-connector] Pushed to ${branch}`);
   }
 }
