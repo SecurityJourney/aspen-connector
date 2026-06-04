@@ -37,6 +37,42 @@ jobs:
           api_domain: api.securityjourney.dev
           scan_results_path: scan.json
 
+  # Mode B — CWE list + instruction rewrite, auto_commit disabled so no push needed.
+  mode-b-no-commit:
+    name: Mode B (no commit-back)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Aspen (Mode B, no commit)
+        uses: ./
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
+          cwes: '["CWE-89","CWE-79"]'
+          instruction_file_path: .github/CLAUDE.md
+          auto_commit: 'false'
+
+  # Mode C — record a CWE list, no instruction file, no commit-back.
+  mode-c:
+    name: Mode C (CWEs only)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Aspen (Mode C)
+        uses: ./
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
+          cwes: '["CWE-89","CWE-79"]'
+
   # Mode A — full scan + instruction rewrite, auto_commit disabled so no push needed.
   mode-a-no-commit:
     name: Mode A (no commit-back)
