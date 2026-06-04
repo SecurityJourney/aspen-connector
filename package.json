@@ -1,0 +1,45 @@
+{
+  "name": "@securityjourney/aspen-connector",
+  "version": "0.1.0",
+  "description": "CI connector for SecurityJourney Aspen (Guardian AI and Adapt)",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "aspen-connector": "src/index.js"
+  },
+  "files": [
+    "src/"
+  ],
+  "engines": {
+    "node": ">=22.3.0"
+  },
+  "scripts": {
+    "test": "node --experimental-test-module-mocks --test",
+    "prepublishOnly": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SecurityJourney/aspen-connector.git"
+  },
+  "homepage": "https://github.com/SecurityJourney/aspen-connector#readme",
+  "bugs": {
+    "url": "https://github.com/SecurityJourney/aspen-connector/issues"
+  },
+  "keywords": [
+    "security",
+    "guardian",
+    "adapt",
+    "sast",
+    "cwe",
+    "gitlab",
+    "github",
+    "ci",
+    "ai",
+    "securityjourney"
+  ],
+  "author": {
+    "name": "SecurityJourney",
+    "url": "https://www.securityjourney.com"
+  },
+  "license": "Apache-2.0"
+}
