@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 /**
@@ -47,10 +47,10 @@ export class GitHubProvider {
     if (!committerEmail) throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
 
     // For pull_request events, GITHUB_SHA is the synthetic merge commit GitHub creates
-    // to preview the merge — not the actual PR branch head. Use HEAD^2 instead, which
-    // is the second parent of the merge commit (the real PR head commit).
+    // to preview the merge — not the actual PR branch head. The event payload written
+    // to GITHUB_EVENT_PATH contains the real PR head SHA at pull_request.head.sha.
     const headSha = isPR
-      ? spawnSync('git', ['rev-parse', 'HEAD^2'], { encoding: 'utf8' }).stdout?.trim()
+      ? JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).pull_request.head.sha
       : process.env.GITHUB_SHA;
 
     return {

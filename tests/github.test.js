@@ -31,6 +31,7 @@ const spawnCalls = [];
 let hasChanges = true;
 let gitLogEmail = 'dev@example.com';
 const PR_HEAD_SHA = 'pr-head-sha-abc123';
+const FAKE_EVENT_PATH = '/tmp/fake-event.json';
 
 mock.module('child_process', {
   namedExports: {
@@ -42,19 +43,24 @@ mock.module('child_process', {
       if (args.includes('--format=%ae')) {
         return { status: gitLogEmail ? 0 : 1, stdout: gitLogEmail ?? '' };
       }
-      if (args.includes('rev-parse') && args.includes('HEAD^2')) {
-        return { status: 0, stdout: PR_HEAD_SHA };
-      }
       return { status: 0 };
     },
   },
 });
 
 const writtenFiles = {};
+const mockFsFiles = {
+  [FAKE_EVENT_PATH]: JSON.stringify({ pull_request: { head: { sha: PR_HEAD_SHA } } }),
+};
+
 mock.module('fs', {
   namedExports: {
     writeFileSync: (path, content, _encoding) => {
       writtenFiles[path] = content;
+    },
+    readFileSync: (path, _encoding) => {
+      if (path in mockFsFiles) return mockFsFiles[path];
+      throw Object.assign(new Error(`ENOENT: ${path}`), { code: 'ENOENT' });
     },
   },
 });
@@ -68,7 +74,7 @@ const { GitHubProvider } = await import('../src/providers/github.js');
 const ENV_KEYS = [
   'GITHUB_SHA', 'GITHUB_REPOSITORY', 'GITHUB_ACTOR',
   'GITHUB_REF', 'GITHUB_HEAD_REF', 'GITHUB_REF_NAME', 'GITHUB_TOKEN',
-  'GITHUB_EVENT_NAME', 'ASPEN_GIT_USER_EMAIL', 'ASPEN_GIT_USER_NAME',
+  'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'ASPEN_GIT_USER_EMAIL', 'ASPEN_GIT_USER_NAME',
 ];
 
 function setGitHubEnv(overrides = {}) {
@@ -81,6 +87,7 @@ function setGitHubEnv(overrides = {}) {
     GITHUB_REF_NAME:   'feature/my-branch',
     GITHUB_TOKEN:      'ghs_token123',
     GITHUB_EVENT_NAME: 'push',
+    GITHUB_EVENT_PATH: FAKE_EVENT_PATH,
   };
   const env = { ...defaults, ...overrides };
   for (const [k, v] of Object.entries(env)) {
@@ -161,7 +168,7 @@ describe('GitHubProvider.getMetadata()', () => {
     assert.equal(meta.prNumber, 42);
   });
 
-  it('uses HEAD^2 SHA for pull_request events (not the merge commit)', async () => {
+  it('reads headSha from event payload for pull_request events (not the merge commit SHA)', async () => {
     setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_REF: 'refs/pull/42/merge', GITHUB_SHA: 'merge-commit-sha' });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.headSha, PR_HEAD_SHA);
