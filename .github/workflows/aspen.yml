@@ -42,5 +42,6 @@ jobs:
       - uses: SecurityJourney/aspen-connector@github_provider4
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
           scan_results_path: scan.json
           instruction_file_path: .github/CLAUDE.md
