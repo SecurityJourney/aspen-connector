@@ -1,0 +1,46 @@
+name: Aspen Security Scan
+
+on:
+  pull_request:
+    branches: [github_provider4]
+
+jobs:
+  aspen:
+    name: Scan and update instructions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed to diff against base branch
+
+      - name: Install Snyk
+        run: npm install -g snyk
+
+      - name: Scan changed files
+        run: |
+          changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          dirs=$(echo "$changed" \
+            | xargs -I{} sh -c '[ -e "{}" ] && echo "{}"' \
+            | xargs -I{} dirname {} \
+            | sort -u \
+            | tr '\n' ' ')
+
+          echo "Changed dirs: $dirs"
+
+          if [ -z "$dirs" ]; then
+            echo "No changed files — skipping scan"
+            echo '{"runs":[]}' > scan.json
+          else
+            snyk code test $dirs --sarif > scan.json || true
+          fi
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - uses: SecurityJourney/aspen-connector@v1
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          scan_results_path: scan.json
+          instruction_file_path: .github/CLAUDE.md
