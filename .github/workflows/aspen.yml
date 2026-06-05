@@ -38,6 +38,9 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      - name: Debug scan results
+        run: wc -c scan.json && head -c 500 scan.json
+
       - uses: SecurityJourney/aspen-connector@github_provider4
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
