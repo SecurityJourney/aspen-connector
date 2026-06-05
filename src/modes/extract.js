@@ -16,11 +16,11 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
     excludeGitMetadataFields,
   } = inputs;
 
-  // Read scan results
-  console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath}`);
   let scanResults;
   try {
-    scanResults = JSON.parse(readFileSync(scanResultsPath, 'utf8'));
+    const raw = readFileSync(scanResultsPath, 'utf8');
+    console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath} (${raw.length} bytes)`);
+    scanResults = JSON.parse(raw);
   } catch (e) {
     throw new Error(`Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`);
   }
