@@ -42,7 +42,7 @@ runs:
     # rejected. Re-checkout at the real branch ref so pushes are fast-forward.
     - uses: actions/checkout@v4
       with:
-        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
         clean: false
 
     - name: Set up Node.js
