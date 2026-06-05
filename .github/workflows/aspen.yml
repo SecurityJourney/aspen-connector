@@ -21,20 +21,16 @@ jobs:
 
       - name: Scan changed files
         run: |
-          changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
-          dirs=$(echo "$changed" \
-            | xargs -I{} sh -c '[ -e "{}" ] && echo "{}"' \
-            | xargs -I{} dirname {} \
-            | sort -u \
-            | tr '\n' ' ')
+          changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD \
+            | xargs -I{} sh -c '[ -e "{}" ] && echo "{}"')
 
-          echo "Changed dirs: $dirs"
+          echo "Changed files: $changed"
 
-          if [ -z "$dirs" ]; then
+          if [ -z "$changed" ]; then
             echo "No changed files — skipping scan"
             echo '{"runs":[]}' > scan.json
           else
-            snyk code test $dirs --sarif > scan.json || true
+            snyk code test . --sarif > scan.json || true
           fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
