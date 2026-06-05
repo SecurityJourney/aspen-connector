@@ -19,6 +19,9 @@ jobs:
       - name: Install Snyk
         run: npm install -g snyk
 
+      - name: Debug diff
+        run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD
+
       - name: Scan changed files
         run: |
           changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD \
