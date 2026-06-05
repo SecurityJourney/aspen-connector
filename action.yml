@@ -43,7 +43,9 @@ runs:
         node-version: '22'
 
     - name: Run Aspen
-      shell: bash
+      # shell is required in composite action run steps — there is no runner default.
+      # Selects pwsh on Windows and bash everywhere else.
+      shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: node ${{ github.action_path }}/src/index.js
       env:
         ASPEN_API_TOKEN: ${{ inputs.api_token }}

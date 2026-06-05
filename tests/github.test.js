@@ -5,8 +5,8 @@
  * - getMetadata(): reads all fields from GitHub Actions env vars
  * - getMetadata(): prNumber parsed from GITHUB_REF for pull_request events
  * - getMetadata(): prNumber is null for push events (no refs/pull/ in GITHUB_REF)
- * - getMetadata(): committerEmail uses GITHUB_ACTOR_ID+ACTOR noreply when available
- * - getMetadata(): committerEmail falls back to bot address when GITHUB_ACTOR_ID is absent
+ * - getMetadata(): committerEmail read from git log author email
+ * - getMetadata(): throws when git log fails or returns empty
  * - getMetadata(): branch uses GITHUB_HEAD_REF for PRs, GITHUB_REF_NAME for pushes
  * - commitFile(): throws when branch env vars are both unset
  * - commitFile(): throws when GITHUB_TOKEN is not set
@@ -151,7 +151,7 @@ describe('GitHubProvider.getMetadata()', () => {
   });
 
   it('reads branch from GITHUB_HEAD_REF for pull_request events', async () => {
-    setGitHubEnv({ GITHUB_HEAD_REF: 'feature/my-pr-branch', GITHUB_REF_NAME: '123/merge' });
+    setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_HEAD_REF: 'feature/my-pr-branch', GITHUB_REF_NAME: '123/merge' });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.branch, 'feature/my-pr-branch');
   });
@@ -163,7 +163,7 @@ describe('GitHubProvider.getMetadata()', () => {
   });
 
   it('parses prNumber from GITHUB_REF for pull_request events', async () => {
-    setGitHubEnv({ GITHUB_REF: 'refs/pull/42/merge' });
+    setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_REF: 'refs/pull/42/merge' });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.prNumber, 42);
   });

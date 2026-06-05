@@ -43,15 +43,29 @@ export class GitHubProvider {
     // Read the actual author email from the triggering commit.
     // GitHub doesn't expose it as an env var, but it's in git history after checkout.
     const gitLog = spawnSync('git', ['log', '-1', '--format=%ae'], { encoding: 'utf8' });
+    if (gitLog.status !== 0 || gitLog.error) {
+      throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
+    }
     const committerEmail = gitLog.stdout?.trim();
     if (!committerEmail) throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
 
     // For pull_request events, GITHUB_SHA is the synthetic merge commit GitHub creates
     // to preview the merge — not the actual PR branch head. The event payload written
     // to GITHUB_EVENT_PATH contains the real PR head SHA at pull_request.head.sha.
-    const headSha = isPR
-      ? JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).pull_request.head.sha
-      : process.env.GITHUB_SHA;
+    let headSha;
+    if (isPR) {
+      try {
+        const eventPath = process.env.GITHUB_EVENT_PATH;
+        if (!eventPath) throw new Error('GITHUB_EVENT_PATH is not set');
+        const payload = JSON.parse(readFileSync(eventPath, 'utf8'));
+        headSha = payload.pull_request?.head?.sha;
+        if (!headSha) throw new Error('pull_request.head.sha missing from event payload');
+      } catch (e) {
+        throw new Error(`Could not read PR head SHA from event payload: ${e.message}`);
+      }
+    } else {
+      headSha = process.env.GITHUB_SHA;
+    }
 
     return {
       headSha,

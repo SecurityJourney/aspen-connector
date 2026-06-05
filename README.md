@@ -130,6 +130,8 @@ jobs:
     permissions:
       contents: write   # required for commit-back
     steps:
+      - uses: actions/checkout@v4
+
       - uses: SecurityJourney/aspen-connector@v1.0.0
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
@@ -141,6 +143,8 @@ jobs:
 
 ```yaml
 steps:
+  - uses: actions/checkout@v4
+
   - uses: SecurityJourney/aspen-connector@v1.0.0
     with:
       api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
@@ -151,6 +155,8 @@ steps:
 
 ```yaml
 steps:
+  - uses: actions/checkout@v4
+
   - name: Run scanner
     run: snyk code test --sarif > results.sarif || true
 
