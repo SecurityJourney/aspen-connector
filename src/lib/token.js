@@ -30,6 +30,6 @@ export async function exchangeTokenForJwt(apiDomain, apiToken) {
     throw new Error(`Token exchange response missing access_token`);
   }
 
-  console.log(`[aspen-connector] JWT obtained (expires in ${data.expires_in}s)`);
+  console.log('[aspen-connector] JWT obtained');
   return data.access_token;
 }

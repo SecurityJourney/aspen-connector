@@ -33,10 +33,11 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
     console.log(`[aspen-connector] Mode B: updating instructions from ${cwes.length} CWE(s): ${cwes.join(', ')}`);
     scanPayload = { cwes };
   } else {
-    console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath}`);
     let scanResults;
     try {
-      scanResults = JSON.parse(readFileSync(scanResultsPath, 'utf8'));
+      const raw = readFileSync(scanResultsPath, 'utf8');
+      console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath} (${raw.length} bytes)`);
+      scanResults = JSON.parse(raw);
     } catch (e) {
       throw new Error(`Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`);
     }

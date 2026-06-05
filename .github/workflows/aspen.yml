@@ -19,28 +19,31 @@ jobs:
       - name: Install Snyk
         run: npm install -g snyk
 
+      - name: Debug diff
+        run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD
+
       - name: Scan changed files
         run: |
-          changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
-          dirs=$(echo "$changed" \
-            | xargs -I{} sh -c '[ -e "{}" ] && echo "{}"' \
-            | xargs -I{} dirname {} \
-            | sort -u \
-            | tr '\n' ' ')
+          changed=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD \
+            | xargs -I{} sh -c '[ -e "{}" ] && echo "{}"')
 
-          echo "Changed dirs: $dirs"
+          echo "Changed files: $changed"
 
-          if [ -z "$dirs" ]; then
+          if [ -z "$changed" ]; then
             echo "No changed files — skipping scan"
             echo '{"runs":[]}' > scan.json
           else
-            snyk code test $dirs --sarif > scan.json || true
+            snyk code test . --sarif > scan.json || true
           fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - uses: SecurityJourney/aspen-connector@v1
+      - name: Debug scan results
+        run: wc -c scan.json && head -c 500 scan.json
+
+      - uses: SecurityJourney/aspen-connector@github_provider4
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          api_domain: api.securityjourney.dev
           scan_results_path: scan.json
           instruction_file_path: .github/CLAUDE.md
