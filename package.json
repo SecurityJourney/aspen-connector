@@ -1,7 +1,7 @@
 {
   "name": "@securityjourney/aspen-connector",
   "version": "0.1.0",
-  "description": "CI connector for SecurityJourney Aspen (Guardian AI and Adapt)",
+  "description": "CI connector for SecurityJourney Aspen",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -41,5 +41,8 @@
     "name": "SecurityJourney",
     "url": "https://www.securityjourney.com"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "prettier": "^3.8.3"
+  }
 }

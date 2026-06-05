@@ -1,6 +1,6 @@
 # @securityjourney/aspen-connector
 
-CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI**.
+CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI** and **GitHub Actions**.
 
 ---
 
@@ -95,6 +95,79 @@ aspen:
 
 ---
 
+## GitHub Actions
+
+Supported events: `pull_request` and `push`. Other event types will produce an error.
+
+The action handles Node.js setup internally. `actions/checkout` must run before the action — typically already present in your workflow for the scanner step.
+
+### Mode A — Rewrite instructions from scan results
+
+```yaml
+jobs:
+  aspen:
+    permissions:
+      contents: write   # required for commit-back
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run scanner
+        run: snyk code test --sarif > results.sarif || true
+
+      - uses: SecurityJourney/aspen-connector@v1.0.0
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          scan_results_path: results.sarif
+          instruction_file_path: .github/ai-instructions.md
+          # scanner_type is optional — auto-detected from scan results
+```
+
+### Mode B — Rewrite instructions from a CWE list
+
+```yaml
+jobs:
+  aspen:
+    permissions:
+      contents: write   # required for commit-back
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SecurityJourney/aspen-connector@v1.0.0
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          cwes: '["CWE-79","CWE-89"]'
+          instruction_file_path: .github/ai-instructions.md
+```
+
+### Mode C — Record a CWE list (no instruction update)
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - uses: SecurityJourney/aspen-connector@v1.0.0
+    with:
+      api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+      cwes: '["CWE-79","CWE-89"]'
+```
+
+### Mode D — Extract and record CWEs from scan results
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Run scanner
+    run: snyk code test --sarif > results.sarif || true
+
+  - uses: SecurityJourney/aspen-connector@v1.0.0
+    with:
+      api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+      scan_results_path: results.sarif
+```
+
+---
+
 ## Commit-back setup
 
 ### GitLab — `CI_JOB_TOKEN`
@@ -114,6 +187,22 @@ script:
 ```
 
 The connector configures git identity automatically (`aspen-bot` by default, or the pipeline user's identity if `GITLAB_USER_EMAIL` / `GITLAB_USER_NAME` are set).
+
+### GitHub Actions — `GITHUB_TOKEN`
+
+The action uses `GITHUB_TOKEN` automatically — no configuration needed. Set `contents: write` on the job and the action handles the rest.
+
+To override the git identity used for the commit, pass environment variables on the step:
+
+```yaml
+- uses: SecurityJourney/aspen-connector@v1.0.0
+  with:
+    api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    ...
+  env:
+    ASPEN_GIT_USER_EMAIL: my-bot@example.com
+    ASPEN_GIT_USER_NAME: My Bot
+```
 
 ---
 
