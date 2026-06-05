@@ -37,6 +37,13 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # For pull_request events, actions/checkout puts HEAD at the synthetic merge commit,
+    # not the actual PR branch head. Pushing from there is a non-fast-forward and is
+    # rejected. Re-checkout at the real branch ref so pushes are fast-forward.
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:

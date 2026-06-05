@@ -313,7 +313,6 @@ describe('GitHubProvider.commitFile()', () => {
 
     const pushCall = spawnCalls.find((c) => c.args[0] === 'push');
     assert.ok(pushCall, 'git push should be called');
-    assert.ok(pushCall.args.includes('--force-with-lease'), 'push should use --force-with-lease');
     assert.ok(pushCall.args.some((a) => a.includes('HEAD:feature/my-branch')));
   });
 
@@ -325,7 +324,6 @@ describe('GitHubProvider.commitFile()', () => {
 
     const pushCall = spawnCalls.find((c) => c.args[0] === 'push');
     assert.ok(pushCall, 'git push should be called');
-    assert.ok(pushCall.args.includes('--force-with-lease'), 'push should use --force-with-lease');
     assert.ok(pushCall.args.some((a) => a.includes('HEAD:main')));
   });
 
