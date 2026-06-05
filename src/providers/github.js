@@ -27,7 +27,9 @@ export class GitHubProvider {
   async getMetadata() {
     const eventName = process.env.GITHUB_EVENT_NAME;
     if (eventName !== 'pull_request' && eventName !== 'push') {
-      throw new Error(`Unsupported GitHub Actions event "${eventName}". Aspen supports pull_request and push events only.`);
+      throw new Error(
+        `Unsupported GitHub Actions event "${eventName}". Aspen supports pull_request and push events only.`,
+      );
     }
 
     const isPR = eventName === 'pull_request';
@@ -42,12 +44,19 @@ export class GitHubProvider {
 
     // Read the actual author email from the triggering commit.
     // GitHub doesn't expose it as an env var, but it's in git history after checkout.
-    const gitLog = spawnSync('git', ['log', '-1', '--format=%ae'], { encoding: 'utf8' });
+    const gitLog = spawnSync('git', ['log', '-1', '--format=%ae'], {
+      encoding: 'utf8',
+    });
     if (gitLog.status !== 0 || gitLog.error) {
-      throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
+      throw new Error(
+        'Could not determine committer email from git log — ensure actions/checkout has run before this action',
+      );
     }
     const committerEmail = gitLog.stdout?.trim();
-    if (!committerEmail) throw new Error('Could not determine committer email from git log — ensure actions/checkout has run before this action');
+    if (!committerEmail)
+      throw new Error(
+        'Could not determine committer email from git log — ensure actions/checkout has run before this action',
+      );
 
     // For pull_request events, GITHUB_SHA is the synthetic merge commit GitHub creates
     // to preview the merge — not the actual PR branch head. The event payload written
@@ -59,9 +68,12 @@ export class GitHubProvider {
         if (!eventPath) throw new Error('GITHUB_EVENT_PATH is not set');
         const payload = JSON.parse(readFileSync(eventPath, 'utf8'));
         headSha = payload.pull_request?.head?.sha;
-        if (!headSha) throw new Error('pull_request.head.sha missing from event payload');
+        if (!headSha)
+          throw new Error('pull_request.head.sha missing from event payload');
       } catch (e) {
-        throw new Error(`Could not read PR head SHA from event payload: ${e.message}`);
+        throw new Error(
+          `Could not read PR head SHA from event payload: ${e.message}`,
+        );
       }
     } else {
       headSha = process.env.GITHUB_SHA;
@@ -70,7 +82,7 @@ export class GitHubProvider {
     return {
       headSha,
       committerEmail,
-      repo:           process.env.GITHUB_REPOSITORY,
+      repo: process.env.GITHUB_REPOSITORY,
       username: actor,
       prNumber,
       branch,
@@ -80,33 +92,49 @@ export class GitHubProvider {
   async commitFile({ filePath, content, message }) {
     const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME;
     if (!branch) {
-      throw new Error('Neither GITHUB_HEAD_REF nor GITHUB_REF_NAME is set — cannot determine target branch');
+      throw new Error(
+        'Neither GITHUB_HEAD_REF nor GITHUB_REF_NAME is set — cannot determine target branch',
+      );
     }
 
     const token = process.env.GITHUB_TOKEN;
-    if (!token) throw new Error('GITHUB_TOKEN is not set — required for commit-back in GitHub Actions');
+    if (!token)
+      throw new Error(
+        'GITHUB_TOKEN is not set — required for commit-back in GitHub Actions',
+      );
 
     // Resolve to absolute path and verify it's within the repo root.
     // Prevents path traversal via ASPEN_INSTRUCTION_FILE_PATH.
     const repoRoot = process.cwd();
     const resolvedPath = resolve(filePath);
     if (!resolvedPath.startsWith(repoRoot + '/') && resolvedPath !== repoRoot) {
-      throw new Error(`Instruction file path "${filePath}" is outside the repository root`);
+      throw new Error(
+        `Instruction file path "${filePath}" is outside the repository root`,
+      );
     }
 
     // Configure git auth via extraheader. Using stdio:'pipe' so the base64-encoded
     // token is never written to the job log.
-    const encodedToken = Buffer.from(`x-access-token:${token}`).toString('base64');
-    runQuiet('git', ['config', '--local', 'http.https://github.com/.extraheader', `Authorization: basic ${encodedToken}`]);
+    const encodedToken = Buffer.from(`x-access-token:${token}`).toString(
+      'base64',
+    );
+    runQuiet('git', [
+      'config',
+      '--local',
+      'http.https://github.com/.extraheader',
+      `Authorization: basic ${encodedToken}`,
+    ]);
 
     writeFileSync(resolvedPath, content, 'utf8');
     console.log(`[aspen-connector] Written updated content to ${filePath}`);
 
     // spawnSync (no shell) — user-controlled values are never interpreted by a shell.
-    const email = process.env.ASPEN_GIT_USER_EMAIL || 'github-actions[bot]@users.noreply.github.com';
-    const name  = process.env.ASPEN_GIT_USER_NAME  || 'github-actions[bot]';
+    const email =
+      process.env.ASPEN_GIT_USER_EMAIL ||
+      'github-actions[bot]@users.noreply.github.com';
+    const name = process.env.ASPEN_GIT_USER_NAME || 'github-actions[bot]';
     run('git', ['config', 'user.email', email]);
-    run('git', ['config', 'user.name',  name]);
+    run('git', ['config', 'user.name', name]);
     run('git', ['add', resolvedPath]);
 
     if (!hasStaged()) {
@@ -138,6 +166,8 @@ function runQuiet(cmd, args) {
 }
 
 function hasStaged() {
-  const result = spawnSync('git', ['diff', '--staged', '--quiet'], { stdio: 'pipe' });
+  const result = spawnSync('git', ['diff', '--staged', '--quiet'], {
+    stdio: 'pipe',
+  });
   return result.status !== 0;
 }

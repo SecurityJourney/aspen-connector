@@ -1,5 +1,5 @@
 name: 'SecurityJourney Aspen'
-description: 'CI connector for SecurityJourney Aspen (Guardian AI and Adapt)'
+description: 'CI connector for SecurityJourney Aspen'
 author: 'SecurityJourney'
 
 inputs:
