@@ -80,13 +80,13 @@ export class GitHubProvider {
       throw new Error(`Instruction file path "${filePath}" is outside the repository root`);
     }
 
-    writeFileSync(resolvedPath, content, 'utf8');
-    console.log(`[aspen-connector] Written updated content to ${filePath}`);
-
     // Configure git auth via extraheader. Using stdio:'pipe' so the base64-encoded
     // token is never written to the job log.
     const encodedToken = Buffer.from(`x-access-token:${token}`).toString('base64');
     runQuiet('git', ['config', '--local', 'http.https://github.com/.extraheader', `Authorization: basic ${encodedToken}`]);
+
+    writeFileSync(resolvedPath, content, 'utf8');
+    console.log(`[aspen-connector] Written updated content to ${filePath}`);
 
     // spawnSync (no shell) — user-controlled values are never interpreted by a shell.
     const email = process.env.ASPEN_GIT_USER_EMAIL || 'github-actions[bot]@users.noreply.github.com';

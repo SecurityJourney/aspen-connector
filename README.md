@@ -99,7 +99,7 @@ aspen:
 
 Supported events: `pull_request` and `push`. Other event types will produce an error.
 
-`actions/checkout` must run before the connector — it uses git history to read the committer email.
+The action handles Node.js setup internally. `actions/checkout` must run before the action — typically already present in your workflow for the scanner step.
 
 ### Mode A — Rewrite instructions from scan results
 
@@ -110,14 +110,16 @@ jobs:
       contents: write   # required for commit-back
     steps:
       - uses: actions/checkout@v4
-      - name: Run Aspen
-        run: npx @securityjourney/aspen-connector
-        env:
-          ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
-          ASPEN_SCAN_RESULTS_PATH: results.sarif
-          ASPEN_INSTRUCTION_FILE_PATH: .github/ai-instructions.md
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ASPEN_SCANNER_TYPE is optional — auto-detected from scan results
+
+      - name: Run scanner
+        run: snyk code test --sarif > results.sarif || true
+
+      - uses: SecurityJourney/aspen-connector@v1
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          scan_results_path: results.sarif
+          instruction_file_path: .github/ai-instructions.md
+          # scanner_type is optional — auto-detected from scan results
 ```
 
 ### Mode B — Rewrite instructions from a CWE list
@@ -128,38 +130,34 @@ jobs:
     permissions:
       contents: write   # required for commit-back
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Aspen
-        run: npx @securityjourney/aspen-connector
-        env:
-          ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
-          ASPEN_CWES: '["CWE-79","CWE-89"]'
-          ASPEN_INSTRUCTION_FILE_PATH: .github/ai-instructions.md
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: SecurityJourney/aspen-connector@v1
+        with:
+          api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+          cwes: '["CWE-79","CWE-89"]'
+          instruction_file_path: .github/ai-instructions.md
 ```
 
 ### Mode C — Record a CWE list (no instruction update)
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
-  - name: Run Aspen
-    run: npx @securityjourney/aspen-connector
-    env:
-      ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
-      ASPEN_CWES: '["CWE-79","CWE-89"]'
+  - uses: SecurityJourney/aspen-connector@v1
+    with:
+      api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+      cwes: '["CWE-79","CWE-89"]'
 ```
 
 ### Mode D — Extract and record CWEs from scan results
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
-  - name: Run Aspen
-    run: npx @securityjourney/aspen-connector
-    env:
-      ASPEN_API_TOKEN: ${{ secrets.SECURITYJOURNEY_TOKEN }}
-      ASPEN_SCAN_RESULTS_PATH: results.sarif
+  - name: Run scanner
+    run: snyk code test --sarif > results.sarif || true
+
+  - uses: SecurityJourney/aspen-connector@v1
+    with:
+      api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+      scan_results_path: results.sarif
 ```
 
 ---
@@ -186,14 +184,18 @@ The connector configures git identity automatically (`aspen-bot` by default, or 
 
 ### GitHub Actions — `GITHUB_TOKEN`
 
-Pass `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` in the step env and set `contents: write` on the job. The connector handles authentication automatically — no additional git config steps required.
+The action uses `GITHUB_TOKEN` automatically — no configuration needed. Set `contents: write` on the job and the action handles the rest.
 
-To override the git identity used for the commit:
+To override the git identity used for the commit, pass environment variables on the step:
 
 ```yaml
-env:
-  ASPEN_GIT_USER_EMAIL: my-bot@example.com
-  ASPEN_GIT_USER_NAME: My Bot
+- uses: SecurityJourney/aspen-connector@v1
+  with:
+    api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    ...
+  env:
+    ASPEN_GIT_USER_EMAIL: my-bot@example.com
+    ASPEN_GIT_USER_NAME: My Bot
 ```
 
 ---
