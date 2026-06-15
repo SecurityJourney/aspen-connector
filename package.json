@@ -3,19 +3,21 @@
   "version": "0.1.0",
   "description": "CI connector for SecurityJourney Aspen",
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "aspen-connector": "src/index.js"
+    "aspen-connector": "dist/index.js"
   },
   "files": [
-    "src/"
+    "dist/"
   ],
   "engines": {
     "node": ">=22.3.0"
   },
   "scripts": {
+    "build": "node scripts/build.js",
     "test": "node --experimental-test-module-mocks --test",
-    "prepublishOnly": "npm test"
+    "lint": "prettier --check .",
+    "prepublishOnly": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
@@ -37,10 +39,7 @@
     "ai",
     "securityjourney"
   ],
-  "author": {
-    "name": "SecurityJourney",
-    "url": "https://www.securityjourney.com"
-  },
+  "author": "SecurityJourney (https://www.securityjourney.com)",
   "license": "Apache-2.0",
   "devDependencies": {
     "prettier": "^3.8.3"

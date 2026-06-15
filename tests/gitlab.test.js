@@ -53,9 +53,14 @@ const { GitLabProvider } = await import('../src/providers/gitlab.js');
 // ---------------------------------------------------------------------------
 
 const ENV_KEYS = [
-  'CI_COMMIT_SHA', 'CI_COMMIT_COMMITTER_EMAIL', 'GITLAB_USER_EMAIL',
-  'CI_PROJECT_PATH', 'GITLAB_USER_LOGIN', 'CI_MERGE_REQUEST_IID',
-  'CI_COMMIT_REF_NAME', 'GITLAB_USER_NAME',
+  'CI_COMMIT_SHA',
+  'CI_COMMIT_COMMITTER_EMAIL',
+  'GITLAB_USER_EMAIL',
+  'CI_PROJECT_PATH',
+  'GITLAB_USER_LOGIN',
+  'CI_MERGE_REQUEST_IID',
+  'CI_COMMIT_REF_NAME',
+  'GITLAB_USER_NAME',
 ];
 
 function setGitLabEnv(overrides = {}) {
@@ -98,7 +103,10 @@ describe('GitLabProvider.getMetadata()', () => {
   });
 
   it('falls back to GITLAB_USER_EMAIL when CI_COMMIT_COMMITTER_EMAIL is absent', async () => {
-    setGitLabEnv({ CI_COMMIT_COMMITTER_EMAIL: null, GITLAB_USER_EMAIL: 'fallback@example.com' });
+    setGitLabEnv({
+      CI_COMMIT_COMMITTER_EMAIL: null,
+      GITLAB_USER_EMAIL: 'fallback@example.com',
+    });
     const meta = await new GitLabProvider().getMetadata();
     assert.equal(meta.committerEmail, 'fallback@example.com');
   });
@@ -158,15 +166,25 @@ describe('GitLabProvider.commitFile()', () => {
   it('throws when CI_COMMIT_REF_NAME is not set', async () => {
     delete process.env.CI_COMMIT_REF_NAME;
     await assert.rejects(
-      () => new GitLabProvider().commitFile({ filePath: 'src/file.md', content: 'x', message: 'msg' }),
-      /CI_COMMIT_REF_NAME is not set/
+      () =>
+        new GitLabProvider().commitFile({
+          filePath: 'src/file.md',
+          content: 'x',
+          message: 'msg',
+        }),
+      /CI_COMMIT_REF_NAME is not set/,
     );
   });
 
   it('throws when filePath resolves outside the repo root', async () => {
     await assert.rejects(
-      () => new GitLabProvider().commitFile({ filePath: '../../etc/passwd', content: 'x', message: 'msg' }),
-      /outside the repository root/
+      () =>
+        new GitLabProvider().commitFile({
+          filePath: '../../etc/passwd',
+          content: 'x',
+          message: 'msg',
+        }),
+      /outside the repository root/,
     );
   });
 
@@ -176,7 +194,9 @@ describe('GitLabProvider.commitFile()', () => {
       content: 'updated content',
       message: 'update instructions',
     });
-    const resolvedKey = Object.keys(writtenFiles).find((k) => k.endsWith('src/instructions.md'));
+    const resolvedKey = Object.keys(writtenFiles).find((k) =>
+      k.endsWith('src/instructions.md'),
+    );
     assert.ok(resolvedKey, 'file should have been written');
     assert.equal(writtenFiles[resolvedKey], 'updated content');
   });
@@ -198,7 +218,11 @@ describe('GitLabProvider.commitFile()', () => {
   it('passes the commit message as a separate arg (no shell escaping)', async () => {
     hasChanges = true;
     const message = 'update instructions [skip ci]';
-    await new GitLabProvider().commitFile({ filePath: 'src/f.md', content: 'x', message });
+    await new GitLabProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message,
+    });
 
     const commitCall = spawnCalls.find((c) => c.args[0] === 'commit');
     assert.ok(commitCall, 'git commit should be called');
@@ -222,12 +246,20 @@ describe('GitLabProvider.commitFile()', () => {
     delete process.env.GITLAB_USER_EMAIL;
     delete process.env.GITLAB_USER_NAME;
 
-    await new GitLabProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitLabProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
-    const emailCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.email');
+    const emailCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.email',
+    );
     assert.equal(emailCall.args[2], 'aspen-bot@noreply.securityjourney.com');
 
-    const nameCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.name');
+    const nameCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.name',
+    );
     assert.equal(nameCall.args[2], 'aspen-bot');
   });
 
@@ -235,18 +267,30 @@ describe('GitLabProvider.commitFile()', () => {
     process.env.GITLAB_USER_EMAIL = 'dev@example.com';
     process.env.GITLAB_USER_NAME = 'Dev User';
 
-    await new GitLabProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitLabProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
-    const emailCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.email');
+    const emailCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.email',
+    );
     assert.equal(emailCall.args[2], 'dev@example.com');
 
-    const nameCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.name');
+    const nameCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.name',
+    );
     assert.equal(nameCall.args[2], 'Dev User');
   });
 
   it('pushes to HEAD:<branch>', async () => {
     process.env.CI_COMMIT_REF_NAME = 'feature/my-branch';
-    await new GitLabProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitLabProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
     const pushCall = spawnCalls.find((c) => c.args[0] === 'push');
     assert.ok(pushCall, 'git push should be called');

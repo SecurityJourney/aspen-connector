@@ -87,7 +87,7 @@ aspen:
 | `ASPEN_API_DOMAIN`                  | No         | `api.securityjourney.com` | API domain override                                                                                              |
 | `ASPEN_SCAN_RESULTS_PATH`           | Modes A, D | —                         | Path to a SARIF or scanner JSON output file                                                                      |
 | `ASPEN_INSTRUCTION_FILE_PATH`       | Modes A, B | —                         | Path to an AI instruction file, or a directory containing one `.md` file                                         |
-| `ASPEN_CWES`                        | Modes B, C | —                         | JSON array of CWE IDs, e.g. `'["CWE-79","CWE-89"]'`                                                             |
+| `ASPEN_CWES`                        | Modes B, C | —                         | JSON array of CWE IDs, e.g. `'["CWE-79","CWE-89"]'`                                                              |
 | `ASPEN_SCANNER_TYPE`                | No         | auto-detected             | Override scanner detection: `snyk`, `bandit`, `sonarqube`, `semgrep`, etc.                                       |
 | `ASPEN_AUTO_COMMIT`                 | No         | `true`                    | Set `false` to skip writing and committing the updated instruction file (Modes A, B)                             |
 | `ASPEN_COMMIT_MESSAGE`              | No         | auto-generated            | Custom commit message for the instruction file update. `[skip ci]` is appended automatically if not present.     |
@@ -107,7 +107,7 @@ The action handles Node.js setup internally. `actions/checkout` must run before 
 jobs:
   aspen:
     permissions:
-      contents: write   # required for commit-back
+      contents: write # required for commit-back
     steps:
       - uses: actions/checkout@v4
 
@@ -128,7 +128,7 @@ jobs:
 jobs:
   aspen:
     permissions:
-      contents: write   # required for commit-back
+      contents: write # required for commit-back
     steps:
       - uses: actions/checkout@v4
 

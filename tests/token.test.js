@@ -16,23 +16,38 @@ import { deriveDirectDomain, exchangeTokenForJwt } from '../src/lib/token.js';
 
 describe('deriveDirectDomain', () => {
   it('converts api.securityjourney.com to my.securityjourney.com', () => {
-    assert.equal(deriveDirectDomain('api.securityjourney.com'), 'my.securityjourney.com');
+    assert.equal(
+      deriveDirectDomain('api.securityjourney.com'),
+      'my.securityjourney.com',
+    );
   });
 
   it('converts api.securityjourney.dev to my.securityjourney.dev', () => {
-    assert.equal(deriveDirectDomain('api.securityjourney.dev'), 'my.securityjourney.dev');
+    assert.equal(
+      deriveDirectDomain('api.securityjourney.dev'),
+      'my.securityjourney.dev',
+    );
   });
 
   it('returns the domain unchanged when it does not start with api.', () => {
-    assert.equal(deriveDirectDomain('my.securityjourney.com'), 'my.securityjourney.com');
+    assert.equal(
+      deriveDirectDomain('my.securityjourney.com'),
+      'my.securityjourney.com',
+    );
   });
 
   it('returns arbitrary non-api. domains unchanged', () => {
-    assert.equal(deriveDirectDomain('custom.example.com'), 'custom.example.com');
+    assert.equal(
+      deriveDirectDomain('custom.example.com'),
+      'custom.example.com',
+    );
   });
 
   it('does not replace api. in the middle of the domain', () => {
-    assert.equal(deriveDirectDomain('not-api.example.com'), 'not-api.example.com');
+    assert.equal(
+      deriveDirectDomain('not-api.example.com'),
+      'not-api.example.com',
+    );
   });
 });
 
@@ -54,7 +69,10 @@ describe('exchangeTokenForJwt', () => {
       text: async () => '',
     }));
 
-    const token = await exchangeTokenForJwt('my.securityjourney.com', 'raw-api-key');
+    const token = await exchangeTokenForJwt(
+      'my.securityjourney.com',
+      'raw-api-key',
+    );
     assert.equal(token, 'jwt-abc123');
   });
 
@@ -86,7 +104,10 @@ describe('exchangeTokenForJwt', () => {
 
     await exchangeTokenForJwt('my.securityjourney.com', 'my-api-key');
     assert.equal(capturedBody.subject_token, 'my-api-key');
-    assert.equal(capturedBody.grant_type, 'urn:ietf:params:oauth:grant-type:token-exchange');
+    assert.equal(
+      capturedBody.grant_type,
+      'urn:ietf:params:oauth:grant-type:token-exchange',
+    );
   });
 
   it('throws a descriptive error on HTTP failure', async () => {
@@ -102,7 +123,7 @@ describe('exchangeTokenForJwt', () => {
         assert.ok(err.message.includes('401'));
         assert.ok(err.message.includes('Unauthorized'));
         return true;
-      }
+      },
     );
   });
 
@@ -118,7 +139,7 @@ describe('exchangeTokenForJwt', () => {
       (err) => {
         assert.ok(err.message.includes('access_token'));
         return true;
-      }
+      },
     );
   });
 
@@ -129,7 +150,7 @@ describe('exchangeTokenForJwt', () => {
 
     await assert.rejects(
       () => exchangeTokenForJwt('my.securityjourney.com', 'api-key'),
-      /ECONNREFUSED/
+      /ECONNREFUSED/,
     );
   });
 });

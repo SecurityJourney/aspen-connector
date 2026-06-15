@@ -59,11 +59,19 @@ describe('callApiWithStreaming', () => {
     fetchMock = mock.method(globalThis, 'fetch', async () =>
       mockResponse([
         sseEvent('processing', { scanner_type: 'snyk' }),
-        sseEvent('complete', { elapsed_seconds: 3, data: { updated_instructions: 'new content' } }),
-      ])
+        sseEvent('complete', {
+          elapsed_seconds: 3,
+          data: { updated_instructions: 'new content' },
+        }),
+      ]),
     );
 
-    const result = await callApiWithStreaming('https://my.example.com', null, 'jwt', {});
+    const result = await callApiWithStreaming(
+      'https://my.example.com',
+      null,
+      'jwt',
+      {},
+    );
     assert.equal(result.updated_instructions, 'new content');
   });
 
@@ -73,11 +81,19 @@ describe('callApiWithStreaming', () => {
         sseEvent('processing', { scanner_type: 'snyk' }),
         sseEvent('heartbeat', { elapsed_seconds: 10 }),
         sseEvent('heartbeat', { elapsed_seconds: 20 }),
-        sseEvent('complete', { elapsed_seconds: 25, data: { updated_instructions: 'done' } }),
-      ])
+        sseEvent('complete', {
+          elapsed_seconds: 25,
+          data: { updated_instructions: 'done' },
+        }),
+      ]),
     );
 
-    const result = await callApiWithStreaming('https://my.example.com', null, 'jwt', {});
+    const result = await callApiWithStreaming(
+      'https://my.example.com',
+      null,
+      'jwt',
+      {},
+    );
     assert.equal(result.updated_instructions, 'done');
   });
 
@@ -86,12 +102,12 @@ describe('callApiWithStreaming', () => {
       mockResponse([
         sseEvent('processing', { scanner_type: 'snyk' }),
         sseEvent('error', { error: 'something went wrong' }),
-      ])
+      ]),
     );
 
     await assert.rejects(
       () => callApiWithStreaming('https://my.example.com', null, 'jwt', {}),
-      /something went wrong/
+      /something went wrong/,
     );
   });
 
@@ -100,12 +116,12 @@ describe('callApiWithStreaming', () => {
       mockResponse([
         sseEvent('processing', { scanner_type: 'snyk' }),
         sseEvent('timeout', { message: 'scan timed out' }),
-      ])
+      ]),
     );
 
     await assert.rejects(
       () => callApiWithStreaming('https://my.example.com', null, 'jwt', {}),
-      /scan timed out/
+      /scan timed out/,
     );
   });
 
@@ -114,12 +130,12 @@ describe('callApiWithStreaming', () => {
       mockResponse([
         sseEvent('processing', { scanner_type: 'snyk' }),
         // stream ends here — no complete event
-      ])
+      ]),
     );
 
     await assert.rejects(
       () => callApiWithStreaming('https://my.example.com', null, 'jwt', {}),
-      /SSE stream ended without receiving a completion event/
+      /SSE stream ended without receiving a completion event/,
     );
   });
 
@@ -137,7 +153,7 @@ describe('callApiWithStreaming', () => {
         assert.ok(err.message.includes('403'));
         assert.ok(err.message.includes('Forbidden'));
         return true;
-      }
+      },
     );
   });
 
@@ -145,12 +161,20 @@ describe('callApiWithStreaming', () => {
     fetchMock = mock.method(globalThis, 'fetch', async () =>
       mockResponse([
         'event: processing\ndata: {bad json}\n\n',
-        sseEvent('complete', { elapsed_seconds: 1, data: { updated_instructions: 'ok' } }),
-      ])
+        sseEvent('complete', {
+          elapsed_seconds: 1,
+          data: { updated_instructions: 'ok' },
+        }),
+      ]),
     );
 
     // Should not throw — malformed line is skipped, complete event is processed
-    const result = await callApiWithStreaming('https://my.example.com', null, 'jwt', {});
+    const result = await callApiWithStreaming(
+      'https://my.example.com',
+      null,
+      'jwt',
+      {},
+    );
     assert.equal(result.updated_instructions, 'ok');
   });
 
@@ -159,7 +183,10 @@ describe('callApiWithStreaming', () => {
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedHeaders = opts.headers;
       return mockResponse([
-        sseEvent('complete', { elapsed_seconds: 1, data: { updated_instructions: 'x' } }),
+        sseEvent('complete', {
+          elapsed_seconds: 1,
+          data: { updated_instructions: 'x' },
+        }),
       ]);
     });
 
@@ -172,7 +199,10 @@ describe('callApiWithStreaming', () => {
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedHeaders = opts.headers;
       return mockResponse([
-        sseEvent('complete', { elapsed_seconds: 1, data: { updated_instructions: 'x' } }),
+        sseEvent('complete', {
+          elapsed_seconds: 1,
+          data: { updated_instructions: 'x' },
+        }),
       ]);
     });
 
@@ -185,7 +215,10 @@ describe('callApiWithStreaming', () => {
     fetchMock = mock.method(globalThis, 'fetch', async (url) => {
       capturedUrl = url;
       return mockResponse([
-        sseEvent('complete', { elapsed_seconds: 1, data: { updated_instructions: 'x' } }),
+        sseEvent('complete', {
+          elapsed_seconds: 1,
+          data: { updated_instructions: 'x' },
+        }),
       ]);
     });
 

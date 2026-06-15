@@ -35,13 +35,18 @@ describe('detectSource', () => {
   let savedEnv;
 
   beforeEach(() => {
-    savedEnv = { GITLAB_CI: process.env.GITLAB_CI, GITHUB_ACTIONS: process.env.GITHUB_ACTIONS };
+    savedEnv = {
+      GITLAB_CI: process.env.GITLAB_CI,
+      GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
+    };
   });
 
   afterEach(() => {
-    if (savedEnv.GITLAB_CI !== undefined) process.env.GITLAB_CI = savedEnv.GITLAB_CI;
+    if (savedEnv.GITLAB_CI !== undefined)
+      process.env.GITLAB_CI = savedEnv.GITLAB_CI;
     else delete process.env.GITLAB_CI;
-    if (savedEnv.GITHUB_ACTIONS !== undefined) process.env.GITHUB_ACTIONS = savedEnv.GITHUB_ACTIONS;
+    if (savedEnv.GITHUB_ACTIONS !== undefined)
+      process.env.GITHUB_ACTIONS = savedEnv.GITHUB_ACTIONS;
     else delete process.env.GITHUB_ACTIONS;
   });
 
@@ -75,13 +80,18 @@ describe('detectProvider', () => {
   let savedEnv;
 
   beforeEach(() => {
-    savedEnv = { GITLAB_CI: process.env.GITLAB_CI, GITHUB_ACTIONS: process.env.GITHUB_ACTIONS };
+    savedEnv = {
+      GITLAB_CI: process.env.GITLAB_CI,
+      GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
+    };
   });
 
   afterEach(() => {
-    if (savedEnv.GITLAB_CI !== undefined) process.env.GITLAB_CI = savedEnv.GITLAB_CI;
+    if (savedEnv.GITLAB_CI !== undefined)
+      process.env.GITLAB_CI = savedEnv.GITLAB_CI;
     else delete process.env.GITLAB_CI;
-    if (savedEnv.GITHUB_ACTIONS !== undefined) process.env.GITHUB_ACTIONS = savedEnv.GITHUB_ACTIONS;
+    if (savedEnv.GITHUB_ACTIONS !== undefined)
+      process.env.GITHUB_ACTIONS = savedEnv.GITHUB_ACTIONS;
     else delete process.env.GITHUB_ACTIONS;
   });
 
@@ -107,7 +117,7 @@ describe('detectProvider', () => {
       (err) => {
         assert.ok(err.message.includes('Unsupported CI platform'));
         return true;
-      }
+      },
     );
   });
 
@@ -116,10 +126,15 @@ describe('detectProvider', () => {
     assert.throws(
       () => detectProvider(),
       (err) => {
-        assert.ok(err.message.includes('GitLab') || err.message.includes('GITLAB_CI'));
-        assert.ok(err.message.includes('GitHub') || err.message.includes('GITHUB_ACTIONS'));
+        assert.ok(
+          err.message.includes('GitLab') || err.message.includes('GITLAB_CI'),
+        );
+        assert.ok(
+          err.message.includes('GitHub') ||
+            err.message.includes('GITHUB_ACTIONS'),
+        );
         return true;
-      }
+      },
     );
   });
 

@@ -75,7 +75,11 @@ describe('buildGitBlock', () => {
   });
 
   it('excludes multiple fields at once', () => {
-    const result = buildGitBlock(fullMetadata, ['repo', 'username', 'prNumber']);
+    const result = buildGitBlock(fullMetadata, [
+      'repo',
+      'username',
+      'prNumber',
+    ]);
     assert.deepEqual(result, {
       commitSha: 'abc123def456',
       committerEmail: 'dev@example.com',
@@ -91,13 +95,21 @@ describe('buildGitBlock', () => {
   });
 
   it('treats null excludeFields the same as empty array', () => {
-    const meta = { headSha: 'sha1', committerEmail: 'dev@example.com', repo: 'org/repo' };
+    const meta = {
+      headSha: 'sha1',
+      committerEmail: 'dev@example.com',
+      repo: 'org/repo',
+    };
     const result = buildGitBlock(meta, null);
     assert.equal(result.repo, 'org/repo');
   });
 
   it('treats undefined excludeFields the same as empty array', () => {
-    const meta = { headSha: 'sha1', committerEmail: 'dev@example.com', repo: 'org/repo' };
+    const meta = {
+      headSha: 'sha1',
+      committerEmail: 'dev@example.com',
+      repo: 'org/repo',
+    };
     const result = buildGitBlock(meta, undefined);
     assert.equal(result.repo, 'org/repo');
   });
