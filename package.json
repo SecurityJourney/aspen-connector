@@ -38,10 +38,7 @@
     "ai",
     "securityjourney"
   ],
-  "author": {
-    "name": "SecurityJourney",
-    "url": "https://www.securityjourney.com"
-  },
+  "author": "SecurityJourney (https://www.securityjourney.com)",
   "license": "Apache-2.0",
   "devDependencies": {
     "prettier": "^3.8.3"
