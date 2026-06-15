@@ -20,26 +20,32 @@ export class GitLabProvider {
     const iid = process.env.CI_MERGE_REQUEST_IID;
 
     return {
-      headSha:        process.env.CI_COMMIT_SHA,
-      committerEmail: process.env.CI_COMMIT_COMMITTER_EMAIL || process.env.GITLAB_USER_EMAIL,
-      repo:           process.env.CI_PROJECT_PATH,
-      username:       process.env.GITLAB_USER_LOGIN,
+      headSha: process.env.CI_COMMIT_SHA,
+      committerEmail:
+        process.env.CI_COMMIT_COMMITTER_EMAIL || process.env.GITLAB_USER_EMAIL,
+      repo: process.env.CI_PROJECT_PATH,
+      username: process.env.GITLAB_USER_LOGIN,
       // Guard against non-numeric values returning NaN
-      prNumber:       iid && /^\d+$/.test(iid) ? parseInt(iid, 10) : null,
-      branch:         process.env.CI_COMMIT_REF_NAME,
+      prNumber: iid && /^\d+$/.test(iid) ? parseInt(iid, 10) : null,
+      branch: process.env.CI_COMMIT_REF_NAME,
     };
   }
 
   async commitFile({ filePath, content, message }) {
     const branch = process.env.CI_COMMIT_REF_NAME;
-    if (!branch) throw new Error('CI_COMMIT_REF_NAME is not set — cannot determine target branch');
+    if (!branch)
+      throw new Error(
+        'CI_COMMIT_REF_NAME is not set — cannot determine target branch',
+      );
 
     // Resolve to absolute path and verify it's within the repo root.
     // Prevents path traversal via ASPEN_INSTRUCTION_FILE_PATH.
     const repoRoot = process.cwd();
     const resolvedPath = resolve(filePath);
     if (!resolvedPath.startsWith(repoRoot + '/') && resolvedPath !== repoRoot) {
-      throw new Error(`Instruction file path "${filePath}" is outside the repository root`);
+      throw new Error(
+        `Instruction file path "${filePath}" is outside the repository root`,
+      );
     }
 
     writeFileSync(resolvedPath, content, 'utf8');
@@ -47,10 +53,11 @@ export class GitLabProvider {
 
     // Use run() (spawnSync, no shell) for all git commands so user-controlled values
     // — email, name, filePath, branch — are never interpreted by a shell.
-    const email = process.env.GITLAB_USER_EMAIL || 'aspen-bot@noreply.securityjourney.com';
-    const name  = process.env.GITLAB_USER_NAME  || 'aspen-bot';
+    const email =
+      process.env.GITLAB_USER_EMAIL || 'aspen-bot@noreply.securityjourney.com';
+    const name = process.env.GITLAB_USER_NAME || 'aspen-bot';
     run('git', ['config', 'user.email', email]);
-    run('git', ['config', 'user.name',  name]);
+    run('git', ['config', 'user.name', name]);
     run('git', ['add', resolvedPath]);
 
     if (!hasStaged()) {
@@ -82,6 +89,8 @@ function run(cmd, args) {
  * Returns true if there are staged changes ready to commit.
  */
 function hasStaged() {
-  const result = spawnSync('git', ['diff', '--staged', '--quiet'], { stdio: 'pipe' });
+  const result = spawnSync('git', ['diff', '--staged', '--quiet'], {
+    stdio: 'pipe',
+  });
   return result.status !== 0; // non-zero = changes staged
 }

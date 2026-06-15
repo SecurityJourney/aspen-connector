@@ -11,15 +11,15 @@ import { getInput } from '../inputs.js';
  */
 export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   const {
-    cwes,             // Mode B: pre-parsed CWE array (mutually exclusive with scanResultsPath)
-    scanResultsPath,  // Mode A: path to scan results JSON file
+    cwes, // Mode B: pre-parsed CWE array (mutually exclusive with scanResultsPath)
+    scanResultsPath, // Mode A: path to scan results JSON file
     instructionFilePath,
     scannerType,
     apiToken,
     apiDomain,
     autoCommit,
     excludeGitMetadataFields,
-    disableAdapt,     // when true, omit the git block → Guardian AI only, no CWE recording
+    disableAdapt, // when true, omit the git block → Guardian AI only, no CWE recording
   } = inputs;
 
   const directDomain = deriveDirectDomain(apiDomain);
@@ -30,15 +30,21 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   // Build the scan payload — CWE list (Mode B) or scan results file (Mode A)
   let scanPayload;
   if (cwes) {
-    console.log(`[aspen-connector] Mode B: updating instructions from ${cwes.length} CWE(s): ${cwes.join(', ')}`);
+    console.log(
+      `[aspen-connector] Mode B: updating instructions from ${cwes.length} CWE(s): ${cwes.join(', ')}`,
+    );
     scanPayload = { cwes };
   } else {
-    console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath}`);
+    console.log(
+      `[aspen-connector] Reading scan results from: ${scanResultsPath}`,
+    );
     let scanResults;
     try {
       scanResults = JSON.parse(readFileSync(scanResultsPath, 'utf8'));
     } catch (e) {
-      throw new Error(`Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`);
+      throw new Error(
+        `Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`,
+      );
     }
     scanPayload = { scan_results: scanResults };
   }
@@ -50,17 +56,25 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   try {
     instructionContent = readFileSync(instructionFile, 'utf8');
   } catch (e) {
-    throw new Error(`Failed to read instruction file ${instructionFile}: ${e.message}`);
+    throw new Error(
+      `Failed to read instruction file ${instructionFile}: ${e.message}`,
+    );
   }
 
   // Collect git metadata from the platform provider
   const metadata = await provider.getMetadata();
 
-  const git = disableAdapt ? null : buildGitBlock(metadata, excludeGitMetadataFields);
+  const git = disableAdapt
+    ? null
+    : buildGitBlock(metadata, excludeGitMetadataFields);
   if (disableAdapt) {
-    console.log('[aspen-connector] Adapt disabled — CWE recording will be skipped');
+    console.log(
+      '[aspen-connector] Adapt disabled — CWE recording will be skipped',
+    );
   } else if (!git) {
-    console.log('[aspen-connector] Warning: no git metadata could be collected — CWE recording will be skipped');
+    console.log(
+      '[aspen-connector] Warning: no git metadata could be collected — CWE recording will be skipped',
+    );
   }
 
   // Build request body
@@ -77,7 +91,12 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
   const apiUrl = `https://${directDomain}/svc/guardian`;
   console.log('[aspen-connector] Calling Guardian API...');
 
-  const apiResponse = await callApiWithStreaming(apiUrl, scannerType, jwtToken, requestBody);
+  const apiResponse = await callApiWithStreaming(
+    apiUrl,
+    scannerType,
+    jwtToken,
+    requestBody,
+  );
 
   // Commit back if we received updated instructions
   if (apiResponse.updated_instructions) {
@@ -91,10 +110,14 @@ export async function runGuardianMode({ inputs, provider, callerMetadata }) {
         message,
       });
     } else {
-      console.log('[aspen-connector] auto_commit is disabled — skipping commit');
+      console.log(
+        '[aspen-connector] auto_commit is disabled — skipping commit',
+      );
     }
   } else {
-    console.log('[aspen-connector] No updated instructions in response, nothing to commit');
+    console.log(
+      '[aspen-connector] No updated instructions in response, nothing to commit',
+    );
   }
 
   return apiResponse;
@@ -110,7 +133,8 @@ function resolveInstructionFile(filePath) {
 
   const files = readdirSync(filePath);
   const mdFile = files.find((f) => /\.md$/i.test(f));
-  if (!mdFile) throw new Error(`No markdown file found in directory: ${filePath}`);
+  if (!mdFile)
+    throw new Error(`No markdown file found in directory: ${filePath}`);
   return join(filePath, mdFile);
 }
 
@@ -121,9 +145,11 @@ function resolveInstructionFile(filePath) {
  */
 function buildCommitMessage(prNumber) {
   const custom = getInput('commit_message');
-  let message = custom || (prNumber
-    ? `Update instructions via Guardian scan\n\nUpdated based on security scan results from MR/PR #${prNumber}`
-    : 'Update instructions via Guardian scan');
+  let message =
+    custom ||
+    (prNumber
+      ? `Update instructions via Guardian scan\n\nUpdated based on security scan results from MR/PR #${prNumber}`
+      : 'Update instructions via Guardian scan');
 
   if (!message.includes('[skip ci]')) {
     message += ' [skip ci]';
@@ -131,4 +157,3 @@ function buildCommitMessage(prNumber) {
 
   return message;
 }
-

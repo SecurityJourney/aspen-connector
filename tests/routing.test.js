@@ -20,19 +20,28 @@ const calls = { guardian: [], adapt: [], extract: [] };
 
 mock.module('../src/modes/guardian.js', {
   namedExports: {
-    runGuardianMode: async (args) => { calls.guardian.push(args); return {}; },
+    runGuardianMode: async (args) => {
+      calls.guardian.push(args);
+      return {};
+    },
   },
 });
 
 mock.module('../src/modes/adapt.js', {
   namedExports: {
-    runAdaptMode: async (args) => { calls.adapt.push(args); return {}; },
+    runAdaptMode: async (args) => {
+      calls.adapt.push(args);
+      return {};
+    },
   },
 });
 
 mock.module('../src/modes/extract.js', {
   namedExports: {
-    runExtractMode: async (args) => { calls.extract.push(args); return {}; },
+    runExtractMode: async (args) => {
+      calls.extract.push(args);
+      return {};
+    },
   },
 });
 
@@ -44,7 +53,10 @@ mock.module('../src/lib/token.js', {
 mock.module('../src/providers/index.js', {
   namedExports: {
     detectProvider: () => ({
-      getMetadata: async () => ({ headSha: 'sha1', committerEmail: 'ci@example.com' }),
+      getMetadata: async () => ({
+        headSha: 'sha1',
+        committerEmail: 'ci@example.com',
+      }),
       commitFile: async () => {},
     }),
     detectSource: () => 'SOURCE_GITHUB',
@@ -94,11 +106,15 @@ function runIndex(env) {
         env: { ...process.env, ...env, GITHUB_ACTIONS: 'true' },
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
-      }
+      },
     );
     return { exitCode: 0, stdout: '', stderr: '' };
   } catch (err) {
-    return { exitCode: err.status ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+    return {
+      exitCode: err.status ?? 1,
+      stdout: err.stdout ?? '',
+      stderr: err.stderr ?? '',
+    };
   }
 }
 
@@ -111,8 +127,9 @@ describe('index.js — mode routing error cases', () => {
     const result = runIndex({ ASPEN_API_TOKEN: 'tok' });
     assert.equal(result.exitCode, 1);
     assert.ok(
-      result.stderr.includes('Invalid inputs') || result.stderr.includes('Invalid'),
-      `Expected error about invalid inputs, got: ${result.stderr}`
+      result.stderr.includes('Invalid inputs') ||
+        result.stderr.includes('Invalid'),
+      `Expected error about invalid inputs, got: ${result.stderr}`,
     );
   });
 
@@ -123,8 +140,9 @@ describe('index.js — mode routing error cases', () => {
     });
     assert.equal(result.exitCode, 1);
     assert.ok(
-      result.stderr.includes('api_token') || result.stderr.includes('ASPEN_API_TOKEN'),
-      `Expected api_token error, got: ${result.stderr}`
+      result.stderr.includes('api_token') ||
+        result.stderr.includes('ASPEN_API_TOKEN'),
+      `Expected api_token error, got: ${result.stderr}`,
     );
   });
 
@@ -136,7 +154,7 @@ describe('index.js — mode routing error cases', () => {
     assert.equal(result.exitCode, 1);
     assert.ok(
       result.stderr.includes('empty'),
-      `Expected empty array error, got: ${result.stderr}`
+      `Expected empty array error, got: ${result.stderr}`,
     );
   });
 
@@ -149,7 +167,7 @@ describe('index.js — mode routing error cases', () => {
     assert.equal(result.exitCode, 1);
     assert.ok(
       result.stderr.includes('empty'),
-      `Expected empty cwes error, got: ${result.stderr}`
+      `Expected empty cwes error, got: ${result.stderr}`,
     );
   });
 });
@@ -162,9 +180,23 @@ describe('index.js — mode selection', () => {
   it('error message lists all four modes', () => {
     const result = runIndex({ ASPEN_API_TOKEN: 'tok' });
     const combined = result.stdout + result.stderr;
-    assert.ok(combined.includes('Mode A') || combined.includes('ASPEN_SCAN_RESULTS_PATH'), `Got: ${combined}`);
-    assert.ok(combined.includes('Mode B') || combined.includes('ASPEN_CWES'), `Got: ${combined}`);
-    assert.ok(combined.includes('Mode C') || combined.includes('ASPEN_CWES'), `Got: ${combined}`);
-    assert.ok(combined.includes('Mode D') || combined.includes('ASPEN_SCAN_RESULTS_PATH'), `Got: ${combined}`);
+    assert.ok(
+      combined.includes('Mode A') ||
+        combined.includes('ASPEN_SCAN_RESULTS_PATH'),
+      `Got: ${combined}`,
+    );
+    assert.ok(
+      combined.includes('Mode B') || combined.includes('ASPEN_CWES'),
+      `Got: ${combined}`,
+    );
+    assert.ok(
+      combined.includes('Mode C') || combined.includes('ASPEN_CWES'),
+      `Got: ${combined}`,
+    );
+    assert.ok(
+      combined.includes('Mode D') ||
+        combined.includes('ASPEN_SCAN_RESULTS_PATH'),
+      `Got: ${combined}`,
+    );
   });
 });

@@ -11,13 +11,15 @@ export function buildGitBlock(metadata, excludeFields) {
   }
 
   const git = {
-    commitSha:      metadata.headSha,
+    commitSha: metadata.headSha,
     committerEmail: metadata.committerEmail,
   };
 
-  if (!excluded.has('repo')     && metadata.repo)     git.repo     = metadata.repo;
-  if (!excluded.has('username') && metadata.username) git.username = metadata.username;
-  if (!excluded.has('prNumber') && metadata.prNumber) git.prNumber = metadata.prNumber;
+  if (!excluded.has('repo') && metadata.repo) git.repo = metadata.repo;
+  if (!excluded.has('username') && metadata.username)
+    git.username = metadata.username;
+  if (!excluded.has('prNumber') && metadata.prNumber)
+    git.prNumber = metadata.prNumber;
 
   return git;
 }

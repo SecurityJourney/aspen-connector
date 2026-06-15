@@ -50,7 +50,9 @@ mock.module('child_process', {
 
 const writtenFiles = {};
 const mockFsFiles = {
-  [FAKE_EVENT_PATH]: JSON.stringify({ pull_request: { head: { sha: PR_HEAD_SHA } } }),
+  [FAKE_EVENT_PATH]: JSON.stringify({
+    pull_request: { head: { sha: PR_HEAD_SHA } },
+  }),
 };
 
 mock.module('fs', {
@@ -72,20 +74,28 @@ const { GitHubProvider } = await import('../src/providers/github.js');
 // ---------------------------------------------------------------------------
 
 const ENV_KEYS = [
-  'GITHUB_SHA', 'GITHUB_REPOSITORY', 'GITHUB_ACTOR',
-  'GITHUB_REF', 'GITHUB_HEAD_REF', 'GITHUB_REF_NAME', 'GITHUB_TOKEN',
-  'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'ASPEN_GIT_USER_EMAIL', 'ASPEN_GIT_USER_NAME',
+  'GITHUB_SHA',
+  'GITHUB_REPOSITORY',
+  'GITHUB_ACTOR',
+  'GITHUB_REF',
+  'GITHUB_HEAD_REF',
+  'GITHUB_REF_NAME',
+  'GITHUB_TOKEN',
+  'GITHUB_EVENT_NAME',
+  'GITHUB_EVENT_PATH',
+  'ASPEN_GIT_USER_EMAIL',
+  'ASPEN_GIT_USER_NAME',
 ];
 
 function setGitHubEnv(overrides = {}) {
   const defaults = {
-    GITHUB_SHA:        'abc123',
+    GITHUB_SHA: 'abc123',
     GITHUB_REPOSITORY: 'org/repo',
-    GITHUB_ACTOR:      'ciuser',
-    GITHUB_REF:        'refs/heads/feature/my-branch',
-    GITHUB_HEAD_REF:   'feature/my-branch',
-    GITHUB_REF_NAME:   'feature/my-branch',
-    GITHUB_TOKEN:      'ghs_token123',
+    GITHUB_ACTOR: 'ciuser',
+    GITHUB_REF: 'refs/heads/feature/my-branch',
+    GITHUB_HEAD_REF: 'feature/my-branch',
+    GITHUB_REF_NAME: 'feature/my-branch',
+    GITHUB_TOKEN: 'ghs_token123',
     GITHUB_EVENT_NAME: 'push',
     GITHUB_EVENT_PATH: FAKE_EVENT_PATH,
   };
@@ -105,14 +115,17 @@ function clearGitHubEnv() {
 // ---------------------------------------------------------------------------
 
 describe('GitHubProvider.getMetadata()', () => {
-  beforeEach(() => { gitLogEmail = 'dev@example.com'; clearGitHubEnv(); });
+  beforeEach(() => {
+    gitLogEmail = 'dev@example.com';
+    clearGitHubEnv();
+  });
   afterEach(clearGitHubEnv);
 
   it('throws on unsupported event types', async () => {
     setGitHubEnv({ GITHUB_EVENT_NAME: 'workflow_dispatch' });
     await assert.rejects(
       () => new GitHubProvider().getMetadata(),
-      /Unsupported GitHub Actions event/
+      /Unsupported GitHub Actions event/,
     );
   });
 
@@ -146,12 +159,16 @@ describe('GitHubProvider.getMetadata()', () => {
     setGitHubEnv();
     await assert.rejects(
       () => new GitHubProvider().getMetadata(),
-      /Could not determine committer email/
+      /Could not determine committer email/,
     );
   });
 
   it('reads branch from GITHUB_HEAD_REF for pull_request events', async () => {
-    setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_HEAD_REF: 'feature/my-pr-branch', GITHUB_REF_NAME: '123/merge' });
+    setGitHubEnv({
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_HEAD_REF: 'feature/my-pr-branch',
+      GITHUB_REF_NAME: '123/merge',
+    });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.branch, 'feature/my-pr-branch');
   });
@@ -163,19 +180,30 @@ describe('GitHubProvider.getMetadata()', () => {
   });
 
   it('parses prNumber from GITHUB_REF for pull_request events', async () => {
-    setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_REF: 'refs/pull/42/merge' });
+    setGitHubEnv({
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_REF: 'refs/pull/42/merge',
+    });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.prNumber, 42);
   });
 
   it('reads headSha from event payload for pull_request events (not the merge commit SHA)', async () => {
-    setGitHubEnv({ GITHUB_EVENT_NAME: 'pull_request', GITHUB_REF: 'refs/pull/42/merge', GITHUB_SHA: 'merge-commit-sha' });
+    setGitHubEnv({
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_REF: 'refs/pull/42/merge',
+      GITHUB_SHA: 'merge-commit-sha',
+    });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.headSha, PR_HEAD_SHA);
   });
 
   it('uses GITHUB_SHA for push events', async () => {
-    setGitHubEnv({ GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/main', GITHUB_SHA: 'real-commit-sha' });
+    setGitHubEnv({
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/main',
+      GITHUB_SHA: 'real-commit-sha',
+    });
     const meta = await new GitHubProvider().getMetadata();
     assert.equal(meta.headSha, 'real-commit-sha');
   });
@@ -213,23 +241,38 @@ describe('GitHubProvider.commitFile()', () => {
     delete process.env.GITHUB_HEAD_REF;
     delete process.env.GITHUB_REF_NAME;
     await assert.rejects(
-      () => new GitHubProvider().commitFile({ filePath: 'src/file.md', content: 'x', message: 'msg' }),
-      /GITHUB_HEAD_REF.*GITHUB_REF_NAME/
+      () =>
+        new GitHubProvider().commitFile({
+          filePath: 'src/file.md',
+          content: 'x',
+          message: 'msg',
+        }),
+      /GITHUB_HEAD_REF.*GITHUB_REF_NAME/,
     );
   });
 
   it('throws when GITHUB_TOKEN is not set', async () => {
     delete process.env.GITHUB_TOKEN;
     await assert.rejects(
-      () => new GitHubProvider().commitFile({ filePath: 'src/file.md', content: 'x', message: 'msg' }),
-      /GITHUB_TOKEN/
+      () =>
+        new GitHubProvider().commitFile({
+          filePath: 'src/file.md',
+          content: 'x',
+          message: 'msg',
+        }),
+      /GITHUB_TOKEN/,
     );
   });
 
   it('throws when filePath resolves outside the repo root', async () => {
     await assert.rejects(
-      () => new GitHubProvider().commitFile({ filePath: '../../etc/passwd', content: 'x', message: 'msg' }),
-      /outside the repository root/
+      () =>
+        new GitHubProvider().commitFile({
+          filePath: '../../etc/passwd',
+          content: 'x',
+          message: 'msg',
+        }),
+      /outside the repository root/,
     );
   });
 
@@ -239,7 +282,9 @@ describe('GitHubProvider.commitFile()', () => {
       content: 'updated content',
       message: 'update instructions',
     });
-    const resolvedKey = Object.keys(writtenFiles).find((k) => k.endsWith('src/instructions.md'));
+    const resolvedKey = Object.keys(writtenFiles).find((k) =>
+      k.endsWith('src/instructions.md'),
+    );
     assert.ok(resolvedKey, 'file should have been written');
     assert.equal(writtenFiles[resolvedKey], 'updated content');
   });
@@ -253,15 +298,19 @@ describe('GitHubProvider.commitFile()', () => {
     });
 
     const commands = spawnCalls.map((c) => c.args[0]);
-    assert.ok(commands.includes('add'),    'git add should be called');
+    assert.ok(commands.includes('add'), 'git add should be called');
     assert.ok(commands.includes('commit'), 'git commit should be called');
-    assert.ok(commands.includes('push'),   'git push should be called');
+    assert.ok(commands.includes('push'), 'git push should be called');
   });
 
   it('passes the commit message as a separate arg (no shell escaping)', async () => {
     hasChanges = true;
     const message = 'update instructions [skip ci]';
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message,
+    });
 
     const commitCall = spawnCalls.find((c) => c.args[0] === 'commit');
     assert.ok(commitCall, 'git commit should be called');
@@ -278,38 +327,61 @@ describe('GitHubProvider.commitFile()', () => {
 
     const commands = spawnCalls.map((c) => c.args[0]);
     assert.ok(!commands.includes('commit'), 'git commit should not be called');
-    assert.ok(!commands.includes('push'),   'git push should not be called');
+    assert.ok(!commands.includes('push'), 'git push should not be called');
   });
 
   it('uses bot defaults when ASPEN_GIT_USER_EMAIL and ASPEN_GIT_USER_NAME are not set', async () => {
     delete process.env.ASPEN_GIT_USER_EMAIL;
     delete process.env.ASPEN_GIT_USER_NAME;
 
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
-    const emailCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.email');
-    assert.equal(emailCall.args[2], 'github-actions[bot]@users.noreply.github.com');
+    const emailCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.email',
+    );
+    assert.equal(
+      emailCall.args[2],
+      'github-actions[bot]@users.noreply.github.com',
+    );
 
-    const nameCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.name');
+    const nameCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.name',
+    );
     assert.equal(nameCall.args[2], 'github-actions[bot]');
   });
 
   it('uses ASPEN_GIT_USER_EMAIL and ASPEN_GIT_USER_NAME when set', async () => {
     process.env.ASPEN_GIT_USER_EMAIL = 'bot@example.com';
-    process.env.ASPEN_GIT_USER_NAME  = 'My Bot';
+    process.env.ASPEN_GIT_USER_NAME = 'My Bot';
 
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
-    const emailCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.email');
+    const emailCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.email',
+    );
     assert.equal(emailCall.args[2], 'bot@example.com');
 
-    const nameCall = spawnCalls.find((c) => c.args[0] === 'config' && c.args[1] === 'user.name');
+    const nameCall = spawnCalls.find(
+      (c) => c.args[0] === 'config' && c.args[1] === 'user.name',
+    );
     assert.equal(nameCall.args[2], 'My Bot');
   });
 
   it('pushes to HEAD:<branch> using GITHUB_HEAD_REF', async () => {
     process.env.GITHUB_HEAD_REF = 'feature/my-branch';
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
     const pushCall = spawnCalls.find((c) => c.args[0] === 'push');
     assert.ok(pushCall, 'git push should be called');
@@ -320,7 +392,11 @@ describe('GitHubProvider.commitFile()', () => {
     delete process.env.GITHUB_HEAD_REF;
     process.env.GITHUB_REF_NAME = 'main';
 
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
     const pushCall = spawnCalls.find((c) => c.args[0] === 'push');
     assert.ok(pushCall, 'git push should be called');
@@ -328,18 +404,26 @@ describe('GitHubProvider.commitFile()', () => {
   });
 
   it('configures git auth via the http extraheader (not the remote URL)', async () => {
-    await new GitHubProvider().commitFile({ filePath: 'src/f.md', content: 'x', message: 'msg' });
+    await new GitHubProvider().commitFile({
+      filePath: 'src/f.md',
+      content: 'x',
+      message: 'msg',
+    });
 
     const configCall = spawnCalls.find(
-      (c) => c.args[0] === 'config' && c.args.some((a) => a.includes('extraheader'))
+      (c) =>
+        c.args[0] === 'config' && c.args.some((a) => a.includes('extraheader')),
     );
     assert.ok(configCall, 'git config extraheader should be called');
 
     const headerValue = configCall.args[configCall.args.length - 1];
-    assert.ok(headerValue.startsWith('Authorization: basic '), 'header should be a basic auth header');
+    assert.ok(
+      headerValue.startsWith('Authorization: basic '),
+      'header should be a basic auth header',
+    );
 
     const encoded = headerValue.replace('Authorization: basic ', '');
-    const decoded  = Buffer.from(encoded, 'base64').toString('utf8');
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
     assert.equal(decoded, 'x-access-token:ghs_token123');
   });
 });

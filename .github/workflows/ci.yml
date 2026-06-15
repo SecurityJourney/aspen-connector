@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: ['**']
-    tags-ignore: ['**']   # publish.yml owns tags
+    tags-ignore: ['**'] # publish.yml owns tags
   pull_request:
     branches: [main]
 
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['22', '24']   # test current LTS and latest
+        node: ['22', '24'] # test current LTS and latest
 
     steps:
       - uses: actions/checkout@v4
@@ -33,3 +33,6 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Check formatting
+        run: npm run lint

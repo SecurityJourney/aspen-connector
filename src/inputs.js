@@ -9,7 +9,9 @@ export function getRequiredInput(name) {
   const value = getInput(name);
   if (!value) {
     const envKey = `ASPEN_${name.toUpperCase().replace(/-/g, '_')}`;
-    throw new Error(`Required input "${name}" is missing. Set the ${envKey} environment variable.`);
+    throw new Error(
+      `Required input "${name}" is missing. Set the ${envKey} environment variable.`,
+    );
   }
   return value;
 }
@@ -27,7 +29,9 @@ export function parseJsonArray(raw, fieldName) {
     if (!Array.isArray(parsed)) throw new Error('expected a JSON array');
     return parsed.map(String);
   } catch (e) {
-    throw new Error(`Invalid value for "${fieldName}": ${e.message}. Expected a JSON array, e.g. '["CWE-79","CWE-89"]'`);
+    throw new Error(
+      `Invalid value for "${fieldName}": ${e.message}. Expected a JSON array, e.g. '["CWE-79","CWE-89"]'`,
+    );
   }
 }
 

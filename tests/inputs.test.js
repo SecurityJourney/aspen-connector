@@ -6,7 +6,13 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { getInput, getRequiredInput, parseBoolean, parseJsonArray, parseExcludeFields } from '../src/inputs.js';
+import {
+  getInput,
+  getRequiredInput,
+  parseBoolean,
+  parseJsonArray,
+  parseExcludeFields,
+} from '../src/inputs.js';
 
 // ---------------------------------------------------------------------------
 // getInput
@@ -89,7 +95,7 @@ describe('getRequiredInput', () => {
         assert.ok(err.message.includes('api_token'));
         assert.ok(err.message.includes('ASPEN_API_TOKEN'));
         return true;
-      }
+      },
     );
   });
 
@@ -137,7 +143,7 @@ describe('parseBoolean', () => {
   it('returns true for any non-empty non-"false" string', () => {
     assert.equal(parseBoolean('yes', false), true);
     assert.equal(parseBoolean('1', false), true);
-    assert.equal(parseBoolean('TRUE', false), true);  // case-sensitive — not "false"
+    assert.equal(parseBoolean('TRUE', false), true); // case-sensitive — not "false"
   });
 
   it('uses true as default when second arg omitted', () => {
@@ -163,10 +169,10 @@ describe('parseJsonArray', () => {
   });
 
   it('parses a valid JSON array of strings', () => {
-    assert.deepEqual(
-      parseJsonArray('["CWE-79","CWE-89"]', 'cwes'),
-      ['CWE-79', 'CWE-89']
-    );
+    assert.deepEqual(parseJsonArray('["CWE-79","CWE-89"]', 'cwes'), [
+      'CWE-79',
+      'CWE-89',
+    ]);
   });
 
   it('coerces array elements to strings', () => {
@@ -179,7 +185,7 @@ describe('parseJsonArray', () => {
       (err) => {
         assert.ok(err.message.includes('cwes'));
         return true;
-      }
+      },
     );
   });
 
@@ -189,7 +195,7 @@ describe('parseJsonArray', () => {
       (err) => {
         assert.ok(err.message.includes('cwes'));
         return true;
-      }
+      },
     );
   });
 
@@ -199,15 +205,12 @@ describe('parseJsonArray', () => {
       (err) => {
         assert.ok(err.message.includes('cwes'));
         return true;
-      }
+      },
     );
   });
 
   it('handles whitespace around the input', () => {
-    assert.deepEqual(
-      parseJsonArray('  ["CWE-79"]  ', 'cwes'),
-      ['CWE-79']
-    );
+    assert.deepEqual(parseJsonArray('  ["CWE-79"]  ', 'cwes'), ['CWE-79']);
   });
 
   it('includes fieldName in error message for diagnostics', () => {
@@ -216,7 +219,7 @@ describe('parseJsonArray', () => {
       (err) => {
         assert.ok(err.message.includes('scanner_list'));
         return true;
-      }
+      },
     );
   });
 });
@@ -247,7 +250,10 @@ describe('parseExcludeFields', () => {
   });
 
   it('parses a JSON array of field names', () => {
-    assert.deepEqual(parseExcludeFields('["repo","username"]'), ['repo', 'username']);
+    assert.deepEqual(parseExcludeFields('["repo","username"]'), [
+      'repo',
+      'username',
+    ]);
   });
 
   it('parses a single-element array', () => {
@@ -264,7 +270,7 @@ describe('parseExcludeFields', () => {
       (err) => {
         assert.ok(err.message.includes('exclude_git_metadata_fields'));
         return true;
-      }
+      },
     );
   });
 

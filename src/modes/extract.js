@@ -17,19 +17,25 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
   } = inputs;
 
   // Read scan results
-  console.log(`[aspen-connector] Reading scan results from: ${scanResultsPath}`);
+  console.log(
+    `[aspen-connector] Reading scan results from: ${scanResultsPath}`,
+  );
   let scanResults;
   try {
     scanResults = JSON.parse(readFileSync(scanResultsPath, 'utf8'));
   } catch (e) {
-    throw new Error(`Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`);
+    throw new Error(
+      `Failed to read or parse scan results from ${scanResultsPath}: ${e.message}`,
+    );
   }
 
   // Collect git metadata for CWE recording
   const metadata = await provider.getMetadata();
   const git = buildGitBlock(metadata, excludeGitMetadataFields);
   if (!git) {
-    console.log('[aspen-connector] Warning: no git metadata could be collected — CWEs will be extracted but not recorded');
+    console.log(
+      '[aspen-connector] Warning: no git metadata could be collected — CWEs will be extracted but not recorded',
+    );
   }
 
   // Build request body
@@ -61,7 +67,9 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`extract-cwes request failed with HTTP ${response.status}: ${body}`);
+    throw new Error(
+      `extract-cwes request failed with HTTP ${response.status}: ${body}`,
+    );
   }
 
   let result;
@@ -71,11 +79,15 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
     throw new Error('extract-cwes response was not valid JSON');
   }
 
-  console.log(`[aspen-connector] Extracted ${(result.cwes ?? []).length} CWE(s): ${(result.cwes ?? []).join(', ') || 'none'}`);
+  console.log(
+    `[aspen-connector] Extracted ${(result.cwes ?? []).length} CWE(s): ${(result.cwes ?? []).join(', ') || 'none'}`,
+  );
   if (result.recorded) {
     console.log('[aspen-connector] CWEs recorded successfully');
   } else if (git) {
-    console.log('[aspen-connector] CWEs were not recorded (tenant setting or backend error)');
+    console.log(
+      '[aspen-connector] CWEs were not recorded (tenant setting or backend error)',
+    );
   }
 
   return result;

@@ -21,7 +21,9 @@ export async function exchangeTokenForJwt(apiDomain, apiToken) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Token exchange failed with HTTP ${response.status}: ${body}`);
+    throw new Error(
+      `Token exchange failed with HTTP ${response.status}: ${body}`,
+    );
   }
 
   const data = await response.json();

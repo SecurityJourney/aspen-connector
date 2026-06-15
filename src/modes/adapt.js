@@ -5,31 +5,36 @@
  * Routes through the API gateway using the raw API key — no JWT exchange needed.
  */
 export async function runAdaptMode({ inputs, callerMetadata }) {
-  const {
-    cwes,
-    apiToken,
-    apiDomain,
-    excludeGitMetadataFields,
-    metadata,
-  } = inputs;
+  const { cwes, apiToken, apiDomain, excludeGitMetadataFields, metadata } =
+    inputs;
 
   const excluded = new Set(excludeGitMetadataFields ?? []);
 
   if (!metadata.headSha) {
-    throw new Error('Could not determine git commit SHA from the CI environment');
+    throw new Error(
+      'Could not determine git commit SHA from the CI environment',
+    );
   }
   if (!metadata.committerEmail) {
-    console.warn('[aspen-connector] Warning: committer email not available — CWE records may not be attributed correctly');
+    console.warn(
+      '[aspen-connector] Warning: committer email not available — CWE records may not be attributed correctly',
+    );
   }
 
   const payload = {
     cwes,
-    gitHeadSha:        metadata.headSha,
+    gitHeadSha: metadata.headSha,
     gitCommitterEmail: metadata.committerEmail,
-    caller_metadata:   callerMetadata,
-    ...(!excluded.has('repo')     && metadata.repo     ? { gitRepo:  metadata.repo }     : {}),
-    ...(!excluded.has('username') && metadata.username ? { username: metadata.username }  : {}),
-    ...(!excluded.has('prNumber') && metadata.prNumber ? { prNumber: metadata.prNumber }  : {}),
+    caller_metadata: callerMetadata,
+    ...(!excluded.has('repo') && metadata.repo
+      ? { gitRepo: metadata.repo }
+      : {}),
+    ...(!excluded.has('username') && metadata.username
+      ? { username: metadata.username }
+      : {}),
+    ...(!excluded.has('prNumber') && metadata.prNumber
+      ? { prNumber: metadata.prNumber }
+      : {}),
   };
 
   console.log(`[aspen-connector] Recording ${cwes.length} CWE(s)...`);
@@ -50,7 +55,9 @@ export async function runAdaptMode({ inputs, callerMetadata }) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`CWE recording request failed with HTTP ${response.status}: ${body}`);
+    throw new Error(
+      `CWE recording request failed with HTTP ${response.status}: ${body}`,
+    );
   }
 
   let data;

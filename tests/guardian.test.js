@@ -31,7 +31,12 @@ mock.module('../src/lib/token.js', {
 // Mock streaming call — captures requestBody passed to it
 mock.module('../src/lib/stream.js', {
   namedExports: {
-    callApiWithStreaming: async (_url, _scannerType, _jwtToken, requestBody) => {
+    callApiWithStreaming: async (
+      _url,
+      _scannerType,
+      _jwtToken,
+      requestBody,
+    ) => {
       capturedRequests.push({ requestBody });
       return mockApiResponse;
     },
@@ -43,7 +48,10 @@ mock.module('../src/lib/git.js', {
   namedExports: {
     buildGitBlock: (metadata, excludeFields) => {
       if (!metadata.headSha || !metadata.committerEmail) return null;
-      return { commitSha: metadata.headSha, committerEmail: metadata.committerEmail };
+      return {
+        commitSha: metadata.headSha,
+        committerEmail: metadata.committerEmail,
+      };
     },
   },
 });
@@ -74,7 +82,10 @@ mock.module('fs', {
   namedExports: {
     readFileSync: (path, _encoding) => {
       if (path in mockFiles) return mockFiles[path];
-      throw Object.assign(new Error(`ENOENT: no such file or directory, open '${path}'`), { code: 'ENOENT' });
+      throw Object.assign(
+        new Error(`ENOENT: no such file or directory, open '${path}'`),
+        { code: 'ENOENT' },
+      );
     },
     statSync: (path) => {
       if (path.endsWith('.md') || path.endsWith('.json')) {
@@ -222,7 +233,10 @@ describe('runGuardianMode — Mode A (scan results file)', () => {
     });
 
     const { requestBody } = capturedRequests[0];
-    assert.ok(!('git' in requestBody), 'git block must be absent when metadata missing');
+    assert.ok(
+      !('git' in requestBody),
+      'git block must be absent when metadata missing',
+    );
   });
 
   it('includes caller_metadata in request body', async () => {
@@ -264,7 +278,7 @@ describe('runGuardianMode — Mode A (scan results file)', () => {
       (err) => {
         assert.ok(err.message.includes('Failed to read or parse scan results'));
         return true;
-      }
+      },
     );
   });
 
@@ -321,7 +335,10 @@ describe('runGuardianMode — Mode A (scan results file)', () => {
       callerMetadata: {},
     });
 
-    assert.ok(!committed, 'commitFile should NOT have been called when autoCommit=false');
+    assert.ok(
+      !committed,
+      'commitFile should NOT have been called when autoCommit=false',
+    );
   });
 
   it('skips commit when updated_instructions is absent in response', async () => {
@@ -348,7 +365,10 @@ describe('runGuardianMode — Mode A (scan results file)', () => {
       callerMetadata: {},
     });
 
-    assert.ok(!committed, 'commitFile should NOT be called when no updated_instructions');
+    assert.ok(
+      !committed,
+      'commitFile should NOT be called when no updated_instructions',
+    );
   });
 });
 
@@ -385,7 +405,10 @@ describe('runGuardianMode — Mode B (CWE list)', () => {
     assert.equal(capturedRequests.length, 1);
     const { requestBody } = capturedRequests[0];
     assert.ok('cwes' in requestBody, 'cwes must be present in Mode B');
-    assert.ok(!('scan_results' in requestBody), 'scan_results must not be present in Mode B');
+    assert.ok(
+      !('scan_results' in requestBody),
+      'scan_results must not be present in Mode B',
+    );
     assert.deepEqual(requestBody.cwes, cwes);
   });
 
@@ -471,7 +494,10 @@ describe('runGuardianMode — Mode B (CWE list)', () => {
       callerMetadata: {},
     });
 
-    assert.ok(committed, 'should commit in Mode B when autoCommit=true and updated_instructions present');
+    assert.ok(
+      committed,
+      'should commit in Mode B when autoCommit=true and updated_instructions present',
+    );
   });
 });
 
@@ -507,7 +533,10 @@ describe('runGuardianMode — disableAdapt', () => {
     });
 
     const { requestBody } = capturedRequests[0];
-    assert.ok(!('git' in requestBody), 'git block must be absent when disableAdapt=true');
+    assert.ok(
+      !('git' in requestBody),
+      'git block must be absent when disableAdapt=true',
+    );
   });
 
   it('omits the git block when disableAdapt=true (Mode B)', async () => {
@@ -527,7 +556,10 @@ describe('runGuardianMode — disableAdapt', () => {
     });
 
     const { requestBody } = capturedRequests[0];
-    assert.ok(!('git' in requestBody), 'git block must be absent when disableAdapt=true');
+    assert.ok(
+      !('git' in requestBody),
+      'git block must be absent when disableAdapt=true',
+    );
   });
 
   it('includes the git block when disableAdapt=false (default)', async () => {
@@ -547,7 +579,10 @@ describe('runGuardianMode — disableAdapt', () => {
     });
 
     const { requestBody } = capturedRequests[0];
-    assert.ok('git' in requestBody, 'git block must be present when disableAdapt=false');
+    assert.ok(
+      'git' in requestBody,
+      'git block must be present when disableAdapt=false',
+    );
   });
 });
 

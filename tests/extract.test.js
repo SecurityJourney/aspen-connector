@@ -27,7 +27,7 @@ mock.module('fs', {
       if (path in mockFiles) return mockFiles[path];
       throw Object.assign(
         new Error(`ENOENT: no such file or directory, open '${path}'`),
-        { code: 'ENOENT' }
+        { code: 'ENOENT' },
       );
     },
   },
@@ -37,7 +37,10 @@ mock.module('../src/lib/git.js', {
   namedExports: {
     buildGitBlock: (metadata, _excludeFields) => {
       if (!metadata.headSha || !metadata.committerEmail) return null;
-      return { commitSha: metadata.headSha, committerEmail: metadata.committerEmail };
+      return {
+        commitSha: metadata.headSha,
+        committerEmail: metadata.committerEmail,
+      };
     },
   },
 });
@@ -49,7 +52,7 @@ const { runExtractMode } = await import('../src/modes/extract.js');
 // ---------------------------------------------------------------------------
 
 const SCAN_PATH = '/tmp/extract-scan.json';
-const scanData  = { runs: [{ tool: { driver: { name: 'SnykCode' } } }] };
+const scanData = { runs: [{ tool: { driver: { name: 'SnykCode' } } }] };
 
 const fakeProvider = {
   getMetadata: async () => ({
@@ -101,7 +104,11 @@ describe('runExtractMode', () => {
 
   it('returns cwes and recorded from the API response', async () => {
     fetchMock = makeOkFetch(['CWE-89', 'CWE-79'], true);
-    const result = await runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata });
+    const result = await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
     assert.deepEqual(result.cwes, ['CWE-89', 'CWE-79']);
     assert.equal(result.recorded, true);
   });
@@ -110,21 +117,40 @@ describe('runExtractMode', () => {
     let capturedUrl;
     fetchMock = mock.method(globalThis, 'fetch', async (url) => {
       capturedUrl = url;
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
-    await runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata });
-    assert.equal(capturedUrl, 'https://api.securityjourney.com/guardian/scan/extract-cwes');
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
+    assert.equal(
+      capturedUrl,
+      'https://api.securityjourney.com/guardian/scan/extract-cwes',
+    );
   });
 
   it('includes scan_results and caller_metadata in request body', async () => {
     let capturedBody;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedBody = JSON.parse(opts.body);
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
-    await runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata });
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
     assert.deepEqual(capturedBody.scan_results, scanData);
     assert.deepEqual(capturedBody.caller_metadata, callerMetadata);
   });
@@ -133,10 +159,18 @@ describe('runExtractMode', () => {
     let capturedBody;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedBody = JSON.parse(opts.body);
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
-    await runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata });
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
     assert.ok(capturedBody.git, 'git block should be present');
     assert.equal(capturedBody.git.commitSha, 'abc123');
   });
@@ -145,10 +179,18 @@ describe('runExtractMode', () => {
     let capturedBody;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedBody = JSON.parse(opts.body);
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
-    await runExtractMode({ inputs: baseInputs, provider: noGitProvider, callerMetadata });
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: noGitProvider,
+      callerMetadata,
+    });
     assert.equal(capturedBody.git, undefined);
   });
 
@@ -156,7 +198,11 @@ describe('runExtractMode', () => {
     let capturedHeaders;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedHeaders = opts.headers;
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
     await runExtractMode({
@@ -171,22 +217,31 @@ describe('runExtractMode', () => {
     let capturedHeaders;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
       capturedHeaders = opts.headers;
-      return { ok: true, json: async () => ({ cwes: [], recorded: false }), text: async () => '' };
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
     });
 
-    await runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata });
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
     assert.equal(capturedHeaders['X-Scanner-Type'], undefined);
   });
 
   it('throws when scan results file cannot be read', async () => {
     fetchMock = makeOkFetch();
     await assert.rejects(
-      () => runExtractMode({
-        inputs: { ...baseInputs, scanResultsPath: '/nonexistent/scan.json' },
-        provider: fakeProvider,
-        callerMetadata,
-      }),
-      /Failed to read or parse scan results/
+      () =>
+        runExtractMode({
+          inputs: { ...baseInputs, scanResultsPath: '/nonexistent/scan.json' },
+          provider: fakeProvider,
+          callerMetadata,
+        }),
+      /Failed to read or parse scan results/,
     );
   });
 
@@ -198,11 +253,16 @@ describe('runExtractMode', () => {
     }));
 
     await assert.rejects(
-      () => runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata }),
+      () =>
+        runExtractMode({
+          inputs: baseInputs,
+          provider: fakeProvider,
+          callerMetadata,
+        }),
       (err) => {
         assert.ok(err.message.includes('500'));
         return true;
-      }
+      },
     );
   });
 
@@ -212,21 +272,33 @@ describe('runExtractMode', () => {
     });
 
     await assert.rejects(
-      () => runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata }),
-      /ECONNREFUSED/
+      () =>
+        runExtractMode({
+          inputs: baseInputs,
+          provider: fakeProvider,
+          callerMetadata,
+        }),
+      /ECONNREFUSED/,
     );
   });
 
   it('throws when response is not valid JSON', async () => {
     fetchMock = mock.method(globalThis, 'fetch', async () => ({
       ok: true,
-      json: async () => { throw new SyntaxError('Unexpected token'); },
+      json: async () => {
+        throw new SyntaxError('Unexpected token');
+      },
       text: async () => '',
     }));
 
     await assert.rejects(
-      () => runExtractMode({ inputs: baseInputs, provider: fakeProvider, callerMetadata }),
-      /not valid JSON/
+      () =>
+        runExtractMode({
+          inputs: baseInputs,
+          provider: fakeProvider,
+          callerMetadata,
+        }),
+      /not valid JSON/,
     );
   });
 });
