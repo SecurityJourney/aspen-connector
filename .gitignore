@@ -1,0 +1,4 @@
+node_modules/
+*.log
+.DS_Store
+# dist/ is intentionally not excluded — it must be committed for the GitHub Action

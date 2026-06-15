@@ -34,5 +34,34 @@ jobs:
       - name: Run tests
         run: npm test
 
+  build:
+    name: Build and lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
       - name: Check formatting
         run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist/ is committed and up to date
+        run: |
+          if [ -z "$(ls -A dist/)" ]; then
+            echo "dist/ is empty after build"
+            exit 1
+          fi
+          if ! git diff --exit-code dist/; then
+            echo "dist/ is out of sync with src/. Run npm run build and commit the result."
+            exit 1
+          fi
