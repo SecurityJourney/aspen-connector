@@ -1,0 +1,51 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write # needed to create GitHub Release
+  id-token: write # needed for --provenance (Sigstore OIDC attestation)
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # --provenance links each published version to the exact repo, commit, and
+      # workflow run that built it. Verifiable with: npm audit signatures
+      #
+      # NPM_TOKEN should be a granular publish-only token scoped to
+      # @securityjourney/aspen-connector — not a full-account token.
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Creates a GitHub Release from the tag so action consumers can pin to it
+      # via uses: SecurityJourney/aspen-connector@v1.0.0
+      - name: Create GitHub Release
+        run: gh release create ${{ github.ref_name }} --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

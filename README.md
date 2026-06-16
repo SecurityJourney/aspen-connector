@@ -2,23 +2,37 @@
 
 CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI** and **GitHub Actions**.
 
+This repository serves as both the source for the [`@securityjourney/aspen-connector`](https://www.npmjs.com/package/@securityjourney/aspen-connector) npm package and the [`SecurityJourney/aspen-connector`](https://github.com/SecurityJourney/aspen-connector) GitHub Action. GitLab users install via npm; GitHub users can use the action directly with `uses: SecurityJourney/aspen-connector@v1.0.0`.
+
 ---
 
 ## Modes
 
 Aspen infers which mode to run from which environment variables are set — no explicit mode flag needed.
 
-| Mode                            | Guardian AI | Adapt | Required inputs                                           | What it does                                                                  |
-| ------------------------------- | ----------- | ----- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **A — Full scan**               | ✅          | ✅    | `ASPEN_SCAN_RESULTS_PATH` + `ASPEN_INSTRUCTION_FILE_PATH` | Rewrites your AI instruction file based on scan results; records CWEs         |
-| **B — CWE list + instructions** | ✅          | ✅    | `ASPEN_CWES` + `ASPEN_INSTRUCTION_FILE_PATH`              | Rewrites your AI instruction file from an explicit CWE list; scanner-agnostic |
-| **C — CWEs only**               | ❌          | ✅    | `ASPEN_CWES`                                              | Records a CWE list directly; no instruction file update                       |
-| **D — Extract CWEs**            | ❌          | ✅    | `ASPEN_SCAN_RESULTS_PATH`                                 | Extracts CWEs from scan results and records them; no instruction file update  |
+### Mode A — Rewrite instructions from scan results
 
-**Modes A and B** update and commit back your AI instruction file — they require git write access (see commit-back setup below).
-**Modes C and D** only record CWEs — no git access needed.
+Runs your security scanner, sends the results to Guardian AI, and commits the updated instruction file back to the branch. Also records CWEs against the commit via Adapt.
 
-To run Guardian AI without Adapt CWE recording, set `ASPEN_EXCLUDE_GIT_METADATA_FIELDS=all` on any mode. Guardian will still rewrite and commit the instruction file; CWEs will not be recorded.
+Requires git write access. See [Commit-back setup](#commit-back-setup).
+
+### Mode B — Rewrite instructions from a CWE list
+
+Same as Mode A but takes an explicit CWE list instead of a raw scan results file. Use this when your pipeline parses CWEs from scanner output directly and passes them as a JSON array.
+
+Requires git write access. See [Commit-back setup](#commit-back-setup).
+
+### Mode C — Record CWEs
+
+Records an explicit CWE list against the commit via Adapt. No instruction file update, no commit-back, no git access needed.
+
+### Mode D — Extract and record CWEs from scan results
+
+Extracts CWEs from scanner output and records them against the commit via Adapt. No instruction file update, no commit-back, no git access needed.
+
+---
+
+To run Guardian AI without Adapt CWE recording, set `ASPEN_EXCLUDE_GIT_METADATA_FIELDS=all` on Modes A or B. Guardian will still rewrite and commit the instruction file; CWEs will not be recorded.
 
 ---
 
@@ -31,7 +45,7 @@ aspen:
   image: node:22
   script:
     - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-    - npx @securityjourney/aspen-connector
+    - npx @securityjourney/aspen-connector@0.1.0
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_SCAN_RESULTS_PATH: results.sarif
@@ -46,7 +60,7 @@ aspen:
   image: node:22
   script:
     - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-    - npx @securityjourney/aspen-connector
+    - npx @securityjourney/aspen-connector@0.1.0
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_CWES: '["CWE-79","CWE-89"]'
@@ -59,7 +73,7 @@ aspen:
 aspen:
   image: node:22
   script:
-    - npx @securityjourney/aspen-connector
+    - npx @securityjourney/aspen-connector@0.1.0
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_CWES: '["CWE-79","CWE-89"]'
@@ -71,7 +85,7 @@ aspen:
 aspen:
   image: node:22
   script:
-    - npx @securityjourney/aspen-connector
+    - npx @securityjourney/aspen-connector@0.1.0
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_SCAN_RESULTS_PATH: results.sarif
@@ -96,8 +110,6 @@ aspen:
 ---
 
 ## GitHub Actions
-
-Supported events: `pull_request` and `push`. Other event types will produce an error.
 
 The action handles Node.js setup internally. `actions/checkout` must run before the action — typically already present in your workflow for the scanner step.
 
