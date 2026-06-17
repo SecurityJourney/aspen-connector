@@ -20,7 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           ref: trunk
 
       - uses: actions/setup-node@v4
@@ -34,10 +33,26 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Configure git
+      # In order to bypass branch protections and push a new commit directly to trunk,
+      # the CI job needs to authorize itself using the 'svc-gha-release' GitHub App
+      - name: Commit Token
+        id: commit
+        uses: actions/create-github-app-token@v1
+        with:
+          app_id: '4135419'
+          installation_id: '142393770'
+          private_key: ${{ secrets.PUBLISH_TOKEN }}
+
+      - name: Setup for Commit
+        shell: bash
         run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
+          set -e
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # use the app to commit
+          git remote add update https://x-access-token:${{ steps.commit.outputs.token }}@github.com/${GITHUB_REPOSITORY}
+          git config --local --unset http.https://github.com/${GITHUB_REPOSITORY}.extraheader
 
       # Bump package.json only — no auto-commit so we can update README first
       - name: Bump version
@@ -59,5 +74,6 @@ jobs:
           git tag "v${VERSION}"
 
       # Pushes the commit and tag — the tag triggers publish.yml
+      # Uses the app token so the push is authenticated as svc-gha-release, which can bypass branch protection.
       - name: Push
-        run: git push origin trunk --follow-tags
+        run: git push "https://x-access-token:${{ steps.commit.outputs.token }}@github.com/${{ github.repository }}.git" trunk --follow-tags
