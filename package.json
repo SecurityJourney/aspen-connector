@@ -1,6 +1,6 @@
 {
   "name": "@securityjourney/aspen-connector",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CI connector for SecurityJourney Aspen",
   "type": "module",
   "main": "dist/index.js",
