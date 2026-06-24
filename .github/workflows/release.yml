@@ -52,7 +52,7 @@ jobs:
 
           # use the app to commit
           git remote add update https://x-access-token:${{ steps.commit.outputs.token }}@github.com/${GITHUB_REPOSITORY}
-          git config --local --unset http.https://github.com/${GITHUB_REPOSITORY}.extraheader
+          git config --local --unset http.https://github.com/${GITHUB_REPOSITORY}.extraheader || true
 
       # Bump package.json only — no auto-commit so we can update README first
       - name: Bump version
