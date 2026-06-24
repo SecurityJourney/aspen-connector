@@ -2,7 +2,7 @@
 
 CI connector for [SecurityJourney](https://securityjourney.com) — integrates Guardian AI and Aspen Adapt into your security scanning pipeline. Supports **GitLab CI** and **GitHub Actions**.
 
-This repository serves as both the source for the [`@securityjourney/aspen-connector`](https://www.npmjs.com/package/@securityjourney/aspen-connector) npm package and the [`SecurityJourney/aspen-connector`](https://github.com/SecurityJourney/aspen-connector) GitHub Action. GitLab users install via npm; GitHub users can use the action directly with `uses: SecurityJourney/aspen-connector@v1.0.0`.
+This repository serves as both the source for the [`@securityjourney/aspen-connector`](https://www.npmjs.com/package/@securityjourney/aspen-connector) npm package and the [`SecurityJourney/aspen-connector`](https://github.com/SecurityJourney/aspen-connector) GitHub Action. GitLab users install via npm; GitHub users can use the action directly with `uses: SecurityJourney/aspen-connector@v0.1.1`.
 
 ---
 
@@ -45,7 +45,7 @@ aspen:
   image: node:22
   script:
     - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-    - npx @securityjourney/aspen-connector@0.1.0
+    - npx @securityjourney/aspen-connector@0.1.1
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_SCAN_RESULTS_PATH: results.sarif
@@ -60,7 +60,7 @@ aspen:
   image: node:22
   script:
     - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-    - npx @securityjourney/aspen-connector@0.1.0
+    - npx @securityjourney/aspen-connector@0.1.1
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_CWES: '["CWE-79","CWE-89"]'
@@ -73,7 +73,7 @@ aspen:
 aspen:
   image: node:22
   script:
-    - npx @securityjourney/aspen-connector@0.1.0
+    - npx @securityjourney/aspen-connector@0.1.1
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_CWES: '["CWE-79","CWE-89"]'
@@ -85,7 +85,7 @@ aspen:
 aspen:
   image: node:22
   script:
-    - npx @securityjourney/aspen-connector@0.1.0
+    - npx @securityjourney/aspen-connector@0.1.1
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_SCAN_RESULTS_PATH: results.sarif
@@ -126,7 +126,7 @@ jobs:
       - name: Run scanner
         run: snyk code test --sarif > results.sarif || true
 
-      - uses: SecurityJourney/aspen-connector@v1.0.0
+      - uses: SecurityJourney/aspen-connector@v0.1.1
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
           scan_results_path: results.sarif
@@ -144,7 +144,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: SecurityJourney/aspen-connector@v1.0.0
+      - uses: SecurityJourney/aspen-connector@v0.1.1
         with:
           api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
           cwes: '["CWE-79","CWE-89"]'
@@ -157,7 +157,7 @@ jobs:
 steps:
   - uses: actions/checkout@v4
 
-  - uses: SecurityJourney/aspen-connector@v1.0.0
+  - uses: SecurityJourney/aspen-connector@v0.1.1
     with:
       api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
       cwes: '["CWE-79","CWE-89"]'
@@ -172,7 +172,7 @@ steps:
   - name: Run scanner
     run: snyk code test --sarif > results.sarif || true
 
-  - uses: SecurityJourney/aspen-connector@v1.0.0
+  - uses: SecurityJourney/aspen-connector@v0.1.1
     with:
       api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
       scan_results_path: results.sarif
@@ -207,7 +207,7 @@ The action uses `GITHUB_TOKEN` automatically — no configuration needed. Set `c
 To override the git identity used for the commit, pass environment variables on the step:
 
 ```yaml
-- uses: SecurityJourney/aspen-connector@v1.0.0
+- uses: SecurityJourney/aspen-connector@v0.1.1
   with:
     api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
     ...
