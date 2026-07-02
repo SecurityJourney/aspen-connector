@@ -33,6 +33,25 @@ inputs:
     description: 'all to disable CWE recording, or JSON array of fields to omit: ["repo","username","prNumber"]'
     required: false
     default: '[]'
+  enforce_training:
+    description: 'Enable training-assignment enforcement gate (Mode E, or pre-check before Modes A-D)'
+    required: false
+    default: 'false'
+  training_status_path:
+    description: 'API path for training status checks'
+    required: false
+    default: '/integrations/training/assignment-status'
+  training_required_assignments:
+    description: 'Optional JSON array of assignment IDs/slugs required for compliance'
+    required: false
+  training_blocking_statuses:
+    description: 'JSON array of response statuses that should block (used when API responds with a string status)'
+    required: false
+    default: '["incomplete","overdue","non_compliant","failed"]'
+  training_fail_open:
+    description: 'When true, allows the pipeline to continue if the training endpoint is unavailable/malformed'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -57,4 +76,9 @@ runs:
         ASPEN_AUTO_COMMIT: ${{ inputs.auto_commit }}
         ASPEN_COMMIT_MESSAGE: ${{ inputs.commit_message }}
         ASPEN_EXCLUDE_GIT_METADATA_FIELDS: ${{ inputs.exclude_git_metadata_fields }}
+        ASPEN_ENFORCE_TRAINING: ${{ inputs.enforce_training }}
+        ASPEN_TRAINING_STATUS_PATH: ${{ inputs.training_status_path }}
+        ASPEN_TRAINING_REQUIRED_ASSIGNMENTS: ${{ inputs.training_required_assignments }}
+        ASPEN_TRAINING_BLOCKING_STATUSES: ${{ inputs.training_blocking_statuses }}
+        ASPEN_TRAINING_FAIL_OPEN: ${{ inputs.training_fail_open }}
         GITHUB_TOKEN: ${{ github.token }}

@@ -30,6 +30,10 @@ Records an explicit CWE list against the commit via Adapt. No instruction file u
 
 Extracts CWEs from scanner output and records them against the commit via Adapt. No instruction file update, no commit-back, no git access needed.
 
+### Mode E — Enforce training-assignment compliance
+
+Checks the committer's training-assignment status through your Aspen training endpoint and fails CI when the user is non-compliant. Use this mode by itself for merge gates, or combine it with Modes A-D to run the gate before Aspen processing.
+
 ---
 
 To run Guardian AI without Adapt CWE recording, set `ASPEN_EXCLUDE_GIT_METADATA_FIELDS=all` on Modes A or B. Guardian will still rewrite and commit the instruction file; CWEs will not be recorded.
@@ -81,7 +85,7 @@ aspen:
 
 ### Mode D — Extract and record CWEs from scan results
 
-```yaml
+````yaml
 aspen:
   image: node:22
   script:
@@ -89,7 +93,25 @@ aspen:
   variables:
     ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
     ASPEN_SCAN_RESULTS_PATH: results.sarif
-```
+
+### Mode E — Training gate only
+
+```yaml
+aspen_training_gate:
+  image: node:22
+  script:
+    - npx @securityjourney/aspen-connector@0.1.2
+  variables:
+    ASPEN_API_TOKEN: $SECURITYJOURNEY_TOKEN
+    ASPEN_ENFORCE_TRAINING: 'true'
+    # Optional overrides:
+    # ASPEN_TRAINING_STATUS_PATH: /integrations/training/assignment-status
+    # ASPEN_TRAINING_REQUIRED_ASSIGNMENTS: '["secure-coding-101","owasp-top-10"]'
+    # ASPEN_TRAINING_BLOCKING_STATUSES: '["incomplete","overdue","failed"]'
+    # ASPEN_TRAINING_FAIL_OPEN: 'false'
+````
+
+````
 
 ---
 
@@ -106,6 +128,11 @@ aspen:
 | `ASPEN_AUTO_COMMIT`                 | No         | `true`                    | Set `false` to skip writing and committing the updated instruction file (Modes A, B)                             |
 | `ASPEN_COMMIT_MESSAGE`              | No         | auto-generated            | Custom commit message for the instruction file update. `[skip ci]` is appended automatically if not present.     |
 | `ASPEN_EXCLUDE_GIT_METADATA_FIELDS` | No         | `[]`                      | `all` to disable CWE recording entirely, or a JSON array of fields to omit: `"repo"`, `"username"`, `"prNumber"` |
+| `ASPEN_ENFORCE_TRAINING`            | No         | `false`                   | Enables training-assignment enforcement. Can run standalone (Mode E) or as a pre-check before Modes A-D.          |
+| `ASPEN_TRAINING_STATUS_PATH`        | No         | `/integrations/training/assignment-status` | API path used for training status checks.                                                                      |
+| `ASPEN_TRAINING_REQUIRED_ASSIGNMENTS` | No       | `[]`                      | Optional JSON array of required assignment IDs/slugs.                                                             |
+| `ASPEN_TRAINING_BLOCKING_STATUSES`  | No         | `'["incomplete","overdue","non_compliant","failed"]'` | JSON array of response `status` values that should fail the gate.                            |
+| `ASPEN_TRAINING_FAIL_OPEN`          | No         | `false`                   | If `true`, allows pipeline continuation when the training endpoint is unavailable or returns malformed data.       |
 
 ---
 
@@ -132,7 +159,7 @@ jobs:
           scan_results_path: results.sarif
           instruction_file_path: .github/ai-instructions.md
           # scanner_type is optional — auto-detected from scan results
-```
+````
 
 ### Mode B — Rewrite instructions from a CWE list
 
@@ -165,7 +192,7 @@ steps:
 
 ### Mode D — Extract and record CWEs from scan results
 
-```yaml
+````yaml
 steps:
   - uses: actions/checkout@v4
 
@@ -176,7 +203,27 @@ steps:
     with:
       api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
       scan_results_path: results.sarif
-```
+
+### Mode E — Training gate only
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - uses: SecurityJourney/aspen-connector@v0.1.2
+    with:
+      api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+      enforce_training: 'true'
+      # Optional overrides:
+      # training_status_path: /integrations/training/assignment-status
+      # training_required_assignments: '["secure-coding-101","owasp-top-10"]'
+      # training_blocking_statuses: '["incomplete","overdue","failed"]'
+      # training_fail_open: 'false'
+````
+
+To block merges, mark this job as a required status check (GitHub) or require successful MR pipelines (GitLab).
+
+````
 
 ---
 
@@ -189,7 +236,7 @@ Modes A and B commit the updated instruction file back to the branch. The pipeli
 ```yaml
 script:
   - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-```
+````
 
 `CI_JOB_TOKEN` requires **CI/CD job token write access** enabled in the project's **Settings → CI/CD → Token Access**. If your project does not allow this, use a project access token with `write_repository` scope:
 

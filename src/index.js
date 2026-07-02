@@ -11,6 +11,7 @@ import {
 import { runGuardianMode } from './modes/guardian.js';
 import { runAdaptMode } from './modes/adapt.js';
 import { runExtractMode } from './modes/extract.js';
+import { runTrainingMode } from './modes/training.js';
 import { version } from './version.js';
 
 async function run() {
@@ -34,6 +35,55 @@ async function run() {
     );
     const disableAdapt = excludeParsed === 'all';
     const excludeGitMetadataFields = disableAdapt ? [] : excludeParsed;
+
+    const enforceTraining = parseBoolean(getInput('enforce_training'), false);
+    const trainingStatusPath =
+      getInput('training_status_path') ||
+      '/integrations/training/assignment-status';
+    const trainingRequiredAssignments = parseJsonArray(
+      getInput('training_required_assignments'),
+      'training_required_assignments',
+    );
+    const trainingBlockingStatusesInput = getInput(
+      'training_blocking_statuses',
+    );
+    const trainingBlockingStatuses = trainingBlockingStatusesInput
+      ? parseJsonArray(
+          trainingBlockingStatusesInput,
+          'training_blocking_statuses',
+        )
+      : ['incomplete', 'overdue', 'non_compliant', 'failed'];
+    const trainingFailOpen = parseBoolean(
+      getInput('training_fail_open'),
+      false,
+    );
+
+    if (enforceTraining) {
+      const metadata = await provider.getMetadata();
+      await runTrainingMode({
+        inputs: {
+          apiToken,
+          apiDomain,
+          trainingStatusPath,
+          trainingRequiredAssignments,
+          trainingBlockingStatuses,
+          trainingFailOpen,
+          metadata,
+        },
+        callerMetadata,
+      });
+    }
+
+    const hasModeInputs =
+      Boolean(cwesRaw) ||
+      Boolean(scanResultsPath) ||
+      Boolean(instructionFilePath);
+    if (enforceTraining && !hasModeInputs) {
+      console.log(
+        '[aspen-connector] Training enforcement check completed with no additional mode selected',
+      );
+      return;
+    }
 
     // ── Mode B: CWE list + instruction file → Guardian SSE (CWE-based update) ──
     if (cwesRaw && instructionFilePath) {
@@ -126,7 +176,8 @@ async function run() {
         '  Mode A: ASPEN_SCAN_RESULTS_PATH + ASPEN_INSTRUCTION_FILE_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)\n' +
         '  Mode B: ASPEN_CWES + ASPEN_INSTRUCTION_FILE_PATH\n' +
         '  Mode C: ASPEN_CWES\n' +
-        '  Mode D: ASPEN_SCAN_RESULTS_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)',
+        '  Mode D: ASPEN_SCAN_RESULTS_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)\n' +
+        '  Mode E: ASPEN_ENFORCE_TRAINING=true (training gate only)',
     );
   } catch (err) {
     console.error(`\n[aspen-connector] Fatal: ${err.message}`);
