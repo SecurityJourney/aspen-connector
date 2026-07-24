@@ -14,11 +14,15 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    # Gate publishing behind a protected environment. The `npm` environment
+    # restricts deployment to v* tags and is where a required human reviewer
+    # and the environment-scoped NPM_TOKEN should live (not a repo-wide secret).
+    environment: npm
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
@@ -26,6 +30,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
+
+      # Verify the registry signatures of every installed dependency before we
+      # build and publish from this tree — catches tampered packages.
+      - name: Verify dependency signatures
+        run: npm audit signatures
 
       - name: Run tests
         run: npm test
@@ -36,8 +45,11 @@ jobs:
       # --provenance links each published version to the exact repo, commit, and
       # workflow run that built it. Verifiable with: npm audit signatures
       #
-      # NPM_TOKEN should be a granular publish-only token scoped to
-      # @securityjourney/aspen-connector — not a full-account token.
+      # TODO(DEV-1702): migrate to npm trusted publishing (OIDC) and drop
+      # NODE_AUTH_TOKEN entirely — id-token: write is already granted above.
+      # Until then, NPM_TOKEN MUST be a granular publish-only automation token
+      # scoped to @securityjourney/aspen-connector, set as an environment secret
+      # on the `npm` environment — not a full-account or org-wide token.
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
