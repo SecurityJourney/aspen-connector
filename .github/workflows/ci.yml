@@ -5,7 +5,7 @@ on:
     branches: ['**']
     tags-ignore: ['**'] # publish.yml owns tags
   pull_request:
-    branches: [trunk] # default branch is trunk, not main — otherwise PR CI never runs
+    branches: [trunk] # default branch is trunk
 
 permissions:
   contents: read
