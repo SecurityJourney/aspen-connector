@@ -3,6 +3,8 @@
  *
  * Covers:
  * - getMetadata(): reads all fields from CI env vars
+ * - getMetadata(): committerEmail is read from `git log` on the real commit,
+ *   preferred over CI_COMMIT_COMMITTER_EMAIL/GITLAB_USER_EMAIL
  * - getMetadata(): prNumber is null when CI_MERGE_REQUEST_IID is absent or non-numeric
  * - commitFile(): throws when CI_COMMIT_REF_NAME is not set
  * - commitFile(): throws when filePath resolves outside the repo root
@@ -24,6 +26,10 @@ const spawnCalls = [];
 // Controls whether `git diff --staged --quiet` exits non-zero (changes staged)
 let hasChanges = true;
 
+// Controls the `git log -1 --format=%ae <sha>` result. `null` simulates the
+// commit not being reachable (e.g. shallow clone) — status 128, no stdout.
+let gitLogEmail = 'real-author@example.com';
+
 mock.module('child_process', {
   namedExports: {
     spawnSync: (cmd, args, _opts) => {
@@ -31,6 +37,11 @@ mock.module('child_process', {
       // git diff --staged --quiet: status 1 means changes staged, 0 means none
       if (args.includes('--staged') && args.includes('--quiet')) {
         return { status: hasChanges ? 1 : 0 };
+      }
+      // git log -1 --format=%ae <sha>
+      if (args[0] === 'log') {
+        if (gitLogEmail === null) return { status: 128, stdout: '' };
+        return { status: 0, stdout: `${gitLogEmail}\n` };
       }
       return { status: 0 };
     },
@@ -61,6 +72,8 @@ const ENV_KEYS = [
   'CI_MERGE_REQUEST_IID',
   'CI_COMMIT_REF_NAME',
   'GITLAB_USER_NAME',
+  'CI_PIPELINE_SOURCE',
+  'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA',
 ];
 
 function setGitLabEnv(overrides = {}) {
@@ -87,7 +100,11 @@ function clearGitLabEnv() {
 // ---------------------------------------------------------------------------
 
 describe('GitLabProvider.getMetadata()', () => {
-  beforeEach(clearGitLabEnv);
+  beforeEach(() => {
+    clearGitLabEnv();
+    gitLogEmail = 'real-author@example.com';
+    spawnCalls.length = 0;
+  });
   afterEach(clearGitLabEnv);
 
   it('reads headSha from CI_COMMIT_SHA', async () => {
@@ -96,17 +113,46 @@ describe('GitLabProvider.getMetadata()', () => {
     assert.equal(meta.headSha, 'deadbeef');
   });
 
-  it('reads committerEmail from CI_COMMIT_COMMITTER_EMAIL', async () => {
-    setGitLabEnv({ CI_COMMIT_COMMITTER_EMAIL: 'dev@example.com' });
+  it('reads committerEmail from git log on CI_COMMIT_SHA (push pipeline)', async () => {
+    setGitLabEnv({ CI_COMMIT_SHA: 'deadbeef' });
+    gitLogEmail = 'real-author@example.com';
     const meta = await new GitLabProvider().getMetadata();
-    assert.equal(meta.committerEmail, 'dev@example.com');
+    assert.equal(meta.committerEmail, 'real-author@example.com');
+    const logCall = spawnCalls.find((c) => c.args[0] === 'log');
+    assert.ok(logCall, 'git log should be called');
+    assert.ok(logCall.args.includes('deadbeef'));
   });
 
-  it('falls back to GITLAB_USER_EMAIL when CI_COMMIT_COMMITTER_EMAIL is absent', async () => {
+  it('reads committerEmail from git log on CI_MERGE_REQUEST_SOURCE_BRANCH_SHA (MR pipeline)', async () => {
     setGitLabEnv({
+      CI_PIPELINE_SOURCE: 'merge_request_event',
+      CI_COMMIT_SHA: 'merge-ref-sha',
+      CI_MERGE_REQUEST_SOURCE_BRANCH_SHA: 'real-branch-sha',
+    });
+    gitLogEmail = 'real-author@example.com';
+    const meta = await new GitLabProvider().getMetadata();
+    assert.equal(meta.committerEmail, 'real-author@example.com');
+    const logCall = spawnCalls.find((c) => c.args[0] === 'log');
+    assert.ok(logCall.args.includes('real-branch-sha'));
+  });
+
+  it('falls back to CI_COMMIT_COMMITTER_EMAIL when git log fails', async () => {
+    setGitLabEnv({
+      CI_COMMIT_SHA: 'deadbeef',
+      CI_COMMIT_COMMITTER_EMAIL: 'committer@example.com',
+    });
+    gitLogEmail = null;
+    const meta = await new GitLabProvider().getMetadata();
+    assert.equal(meta.committerEmail, 'committer@example.com');
+  });
+
+  it('falls back to GITLAB_USER_EMAIL when git log fails and CI_COMMIT_COMMITTER_EMAIL is absent', async () => {
+    setGitLabEnv({
+      CI_COMMIT_SHA: 'deadbeef',
       CI_COMMIT_COMMITTER_EMAIL: null,
       GITLAB_USER_EMAIL: 'fallback@example.com',
     });
+    gitLogEmail = null;
     const meta = await new GitLabProvider().getMetadata();
     assert.equal(meta.committerEmail, 'fallback@example.com');
   });

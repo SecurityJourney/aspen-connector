@@ -33,6 +33,18 @@ inputs:
     description: 'all to disable CWE recording, or JSON array of fields to omit: ["repo","username","prNumber"]'
     required: false
     default: '[]'
+  enforce_gate:
+    description: 'Enable the learner-compliance gate check (Mode E, or pre-check before Modes A-D).'
+    required: false
+    default: 'false'
+  gate_fail_open:
+    description: 'When true (the default), the pipeline continues if the gate endpoint reports an internal error, times out, or returns something unreadable — this only covers our own infrastructure failing, not a real non-compliant result. Set to false to block CI whenever the gate check cannot be completed.'
+    required: false
+    default: 'true'
+  gate_comment_on_failure:
+    description: 'When true, posts the gate failure reason as a comment on the pull request'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -57,4 +69,7 @@ runs:
         ASPEN_AUTO_COMMIT: ${{ inputs.auto_commit }}
         ASPEN_COMMIT_MESSAGE: ${{ inputs.commit_message }}
         ASPEN_EXCLUDE_GIT_METADATA_FIELDS: ${{ inputs.exclude_git_metadata_fields }}
+        ASPEN_ENFORCE_GATE: ${{ inputs.enforce_gate }}
+        ASPEN_GATE_FAIL_OPEN: ${{ inputs.gate_fail_open }}
+        ASPEN_GATE_COMMENT_ON_FAILURE: ${{ inputs.gate_comment_on_failure }}
         GITHUB_TOKEN: ${{ github.token }}

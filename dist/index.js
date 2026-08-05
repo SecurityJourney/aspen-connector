@@ -11,6 +11,7 @@ import {
 import { runGuardianMode } from './modes/guardian.js';
 import { runAdaptMode } from './modes/adapt.js';
 import { runExtractMode } from './modes/extract.js';
+import { runGateMode } from './modes/gate.js';
 import { version } from './version.js';
 
 async function run() {
@@ -34,6 +35,41 @@ async function run() {
     );
     const disableAdapt = excludeParsed === 'all';
     const excludeGitMetadataFields = disableAdapt ? [] : excludeParsed;
+
+    const enforceGate = parseBoolean(getInput('enforce_gate'), false);
+    // Defaults to fail-open: if the gate endpoint reports an internal error
+    // (rather than a real compliant/non-compliant answer), the pipeline
+    // continues rather than blocking on our own infrastructure trouble.
+    const gateFailOpen = parseBoolean(getInput('gate_fail_open'), true);
+    const gateCommentOnFailure = parseBoolean(
+      getInput('gate_comment_on_failure'),
+      true,
+    );
+
+    if (enforceGate) {
+      const metadata = await provider.getMetadata();
+      await runGateMode({
+        inputs: {
+          apiToken,
+          apiDomain,
+          failOpen: gateFailOpen,
+          commentOnFailure: gateCommentOnFailure,
+          metadata,
+        },
+        provider,
+      });
+    }
+
+    const hasModeInputs =
+      Boolean(cwesRaw) ||
+      Boolean(scanResultsPath) ||
+      Boolean(instructionFilePath);
+    if (enforceGate && !hasModeInputs) {
+      console.log(
+        '[aspen-connector] Gate check completed with no additional mode selected',
+      );
+      return;
+    }
 
     // ── Mode B: CWE list + instruction file → Guardian SSE (CWE-based update) ──
     if (cwesRaw && instructionFilePath) {
@@ -126,7 +162,8 @@ async function run() {
         '  Mode A: ASPEN_SCAN_RESULTS_PATH + ASPEN_INSTRUCTION_FILE_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)\n' +
         '  Mode B: ASPEN_CWES + ASPEN_INSTRUCTION_FILE_PATH\n' +
         '  Mode C: ASPEN_CWES\n' +
-        '  Mode D: ASPEN_SCAN_RESULTS_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)',
+        '  Mode D: ASPEN_SCAN_RESULTS_PATH (ASPEN_SCANNER_TYPE optional — auto-detected)\n' +
+        '  Mode E: ASPEN_ENFORCE_GATE=true (gate check only)',
     );
   } catch (err) {
     console.error(`\n[aspen-connector] Fatal: ${err.message}`);

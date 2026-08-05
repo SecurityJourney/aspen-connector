@@ -6,6 +6,7 @@
  * - Mode B: cwes + instruction_file_path             → runGuardianMode with cwes
  * - Mode C: cwes only                                → runAdaptMode
  * - Mode D: scan_results_path only                   → runExtractMode
+ * - Mode E: enforce_gate only                        → runGateMode
  * - No valid inputs                                  → error + process.exit(1)
  */
 
@@ -177,7 +178,7 @@ describe('index.js — mode routing error cases', () => {
 // ---------------------------------------------------------------------------
 
 describe('index.js — mode selection', () => {
-  it('error message lists all four modes', () => {
+  it('error message lists all five modes', () => {
     const result = runIndex({ ASPEN_API_TOKEN: 'tok' });
     const combined = result.stdout + result.stderr;
     assert.ok(
@@ -196,6 +197,10 @@ describe('index.js — mode selection', () => {
     assert.ok(
       combined.includes('Mode D') ||
         combined.includes('ASPEN_SCAN_RESULTS_PATH'),
+      `Got: ${combined}`,
+    );
+    assert.ok(
+      combined.includes('Mode E') || combined.includes('ASPEN_ENFORCE_GATE'),
       `Got: ${combined}`,
     );
   });
