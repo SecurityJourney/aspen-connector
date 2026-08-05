@@ -1,11 +1,13 @@
 import { readFileSync } from 'fs';
 import { buildGitBlock } from '../lib/git.js';
+import { deriveDirectDomain, exchangeTokenForJwt } from '../lib/token.js';
 
 /**
  * Mode D: scan results only → extract CWEs + record them.
  * No instruction file, no commit-back, no AI rewrite.
  *
- * Routes through the API gateway using the raw API key — no JWT exchange needed.
+ * Requires a JWT rather than the raw API key, so apiDomain goes through the
+ * same api.->my. derivation and token exchange as the other JWT-based modes.
  */
 export async function runExtractMode({ inputs, provider, callerMetadata }) {
   const {
@@ -45,12 +47,14 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
     ...(git ? { git } : {}),
   };
 
-  const apiUrl = `https://${apiDomain}/guardian/scan/extract-cwes`;
+  const directDomain = deriveDirectDomain(apiDomain);
+  const jwtToken = await exchangeTokenForJwt(directDomain, apiToken);
+  const apiUrl = `https://${directDomain}/svc/guardian/scan/extract-cwes`;
   console.log('[aspen-connector] Extracting CWEs from scan results...');
 
   const headers = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiToken}`,
+    Authorization: `Bearer ${jwtToken}`,
   };
   if (scannerType) headers['X-Scanner-Type'] = scannerType;
 
@@ -62,7 +66,7 @@ export async function runExtractMode({ inputs, provider, callerMetadata }) {
       body: JSON.stringify(requestBody),
     });
   } catch (e) {
-    throw new Error(`Network error reaching ${apiDomain}: ${e.message}`);
+    throw new Error(`Network error reaching ${directDomain}: ${e.message}`);
   }
 
   if (!response.ok) {

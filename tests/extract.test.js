@@ -45,6 +45,15 @@ mock.module('../src/lib/git.js', {
   },
 });
 
+let mockJwt = 'mock-jwt-token';
+
+mock.module('../src/lib/token.js', {
+  namedExports: {
+    exchangeTokenForJwt: async (_domain, _token) => mockJwt,
+    deriveDirectDomain: (apiDomain) => apiDomain.replace(/^api\./, 'my.'),
+  },
+});
+
 const { runExtractMode } = await import('../src/modes/extract.js');
 
 // ---------------------------------------------------------------------------
@@ -131,7 +140,7 @@ describe('runExtractMode', () => {
     });
     assert.equal(
       capturedUrl,
-      'https://api.securityjourney.com/guardian/scan/extract-cwes',
+      'https://my.securityjourney.com/svc/guardian/scan/extract-cwes',
     );
   });
 
