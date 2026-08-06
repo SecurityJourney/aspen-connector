@@ -45,6 +45,15 @@ mock.module('../src/lib/git.js', {
   },
 });
 
+let mockJwt = 'mock-jwt-token';
+
+mock.module('../src/lib/token.js', {
+  namedExports: {
+    exchangeTokenForJwt: async (_domain, _token) => mockJwt,
+    deriveDirectDomain: (apiDomain) => apiDomain.replace(/^api\./, 'my.'),
+  },
+});
+
 const { runExtractMode } = await import('../src/modes/extract.js');
 
 // ---------------------------------------------------------------------------
@@ -131,8 +140,27 @@ describe('runExtractMode', () => {
     });
     assert.equal(
       capturedUrl,
-      'https://api.securityjourney.com/guardian/scan/extract-cwes',
+      'https://my.securityjourney.com/svc/guardian/scan/extract-cwes',
     );
+  });
+
+  it('sends the exchanged JWT, not the raw API token, as the Authorization header', async () => {
+    let capturedHeaders;
+    fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
+      capturedHeaders = opts.headers;
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
+    });
+
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
+    assert.equal(capturedHeaders.Authorization, `Bearer ${mockJwt}`);
   });
 
   it('includes scan_results and caller_metadata in request body', async () => {

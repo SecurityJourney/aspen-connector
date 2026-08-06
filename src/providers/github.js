@@ -89,6 +89,38 @@ export class GitHubProvider {
     };
   }
 
+  async commentOnPullRequest({ prNumber, body }) {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token)
+      throw new Error(
+        'GITHUB_TOKEN is not set — required to comment on a pull request',
+      );
+
+    const repo = process.env.GITHUB_REPOSITORY;
+    if (!repo) throw new Error('GITHUB_REPOSITORY is not set');
+
+    // The Issues API handles comments for both issues and PRs on GitHub.
+    const url = `https://api.github.com/repos/${repo}/issues/${prNumber}/comments`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ body }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(
+        `GitHub API returned HTTP ${response.status} when posting PR comment: ${text.slice(0, 300)}`,
+      );
+    }
+
+    console.log(`[aspen-connector] Posted comment to PR #${prNumber}`);
+  }
+
   async commitFile({ filePath, content, message }) {
     const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME;
     if (!branch) {
