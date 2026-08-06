@@ -15,8 +15,7 @@ const COMPLETE_STATUSES = new Set([
 ]);
 
 export async function runGateMode({ inputs, provider }) {
-  const { apiToken, apiDomain, failOpen, commentOnFailure, metadata } =
-    inputs;
+  const { apiToken, apiDomain, failOpen, commentOnFailure, metadata } = inputs;
 
   if (!metadata.committerEmail) {
     return handleFailOpen(

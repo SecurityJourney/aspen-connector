@@ -136,6 +136,17 @@ describe('GitLabProvider.getMetadata()', () => {
     assert.ok(logCall.args.includes('real-branch-sha'));
   });
 
+  it('reads headSha from CI_MERGE_REQUEST_SOURCE_BRANCH_SHA, not the synthetic merge commit (MR pipeline)', async () => {
+    setGitLabEnv({
+      CI_PIPELINE_SOURCE: 'merge_request_event',
+      CI_COMMIT_SHA: 'merge-ref-sha',
+      CI_MERGE_REQUEST_SOURCE_BRANCH_SHA: 'real-branch-sha',
+    });
+    gitLogEmail = 'real-author@example.com';
+    const meta = await new GitLabProvider().getMetadata();
+    assert.equal(meta.headSha, 'real-branch-sha');
+  });
+
   it('falls back to CI_COMMIT_COMMITTER_EMAIL when git log fails', async () => {
     setGitLabEnv({
       CI_COMMIT_SHA: 'deadbeef',

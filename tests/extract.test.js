@@ -144,6 +144,25 @@ describe('runExtractMode', () => {
     );
   });
 
+  it('sends the exchanged JWT, not the raw API token, as the Authorization header', async () => {
+    let capturedHeaders;
+    fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {
+      capturedHeaders = opts.headers;
+      return {
+        ok: true,
+        json: async () => ({ cwes: [], recorded: false }),
+        text: async () => '',
+      };
+    });
+
+    await runExtractMode({
+      inputs: baseInputs,
+      provider: fakeProvider,
+      callerMetadata,
+    });
+    assert.equal(capturedHeaders.Authorization, `Bearer ${mockJwt}`);
+  });
+
   it('includes scan_results and caller_metadata in request body', async () => {
     let capturedBody;
     fetchMock = mock.method(globalThis, 'fetch', async (_url, opts) => {

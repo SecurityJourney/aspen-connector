@@ -31,7 +31,7 @@ export class GitLabProvider {
       process.env.CI_COMMIT_SHA;
 
     return {
-      headSha: process.env.CI_COMMIT_SHA,
+      headSha,
       committerEmail: getCommitterEmail(headSha),
       repo: process.env.CI_PROJECT_PATH,
       username: process.env.GITLAB_USER_LOGIN,
