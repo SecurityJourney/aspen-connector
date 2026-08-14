@@ -102,7 +102,7 @@ describe('runGateMode', () => {
               {
                 id: '2',
                 title: 'Phishing Awareness',
-                status: 'ASSIGNMENT_STATUS_PASSED',
+                status: 'ASSIGNMENT_STATUS_COMPLETED',
               },
             ],
           },
@@ -113,6 +113,87 @@ describe('runGateMode', () => {
     await assert.rejects(
       () => runGateMode({ inputs: baseInputs, provider: noopProvider }),
       /Gate check failed: incomplete: Secure Coding 101/,
+    );
+  });
+
+  it('passes and warns, without blocking, when a required assignment is not_assigned', async () => {
+    fetchMock = mock.method(globalThis, 'fetch', async () =>
+      jsonResponse({
+        results: [
+          {
+            email: 'dev@example.com',
+            compliant: true,
+            requiredAssignments: [
+              {
+                id: '1',
+                title: 'Secure Coding 101',
+                status: 'ASSIGNMENT_STATUS_COMPLETED',
+              },
+              {
+                id: '2',
+                title: 'Onboarding Checklist',
+                status: 'ASSIGNMENT_STATUS_NOT_ASSIGNED',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    const warnMock = mock.method(console, 'warn', () => {});
+    try {
+      const result = await runGateMode({
+        inputs: baseInputs,
+        provider: noopProvider,
+      });
+
+      assert.equal(result.results[0].compliant, true);
+      const warned = warnMock.mock.calls.some((call) =>
+        call.arguments[0].includes('Onboarding Checklist'),
+      );
+      assert.ok(
+        warned,
+        'expected a warning naming the not_assigned assignment',
+      );
+    } finally {
+      warnMock.mock.restore();
+    }
+  });
+
+  it('excludes not_assigned from the incomplete-assignments summary', async () => {
+    fetchMock = mock.method(globalThis, 'fetch', async () =>
+      jsonResponse({
+        results: [
+          {
+            email: 'dev@example.com',
+            compliant: false,
+            requiredAssignments: [
+              {
+                id: '1',
+                title: 'Secure Coding 101',
+                status: 'ASSIGNMENT_STATUS_IN_PROGRESS',
+              },
+              {
+                id: '2',
+                title: 'Onboarding Checklist',
+                status: 'ASSIGNMENT_STATUS_NOT_ASSIGNED',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    await assert.rejects(
+      () => runGateMode({ inputs: baseInputs, provider: noopProvider }),
+      (err) => {
+        assert.match(
+          err.message,
+          /Gate check failed: incomplete: Secure Coding 101/,
+        );
+        assert.doesNotMatch(err.message, /Onboarding Checklist/);
+        return true;
+      },
     );
   });
 
@@ -223,6 +304,27 @@ describe('runGateMode', () => {
     });
     assert.equal(capturedOpts.headers.Authorization, 'Bearer tok');
     assert.equal(capturedOpts.headers['Content-Type'], 'application/json');
+  });
+
+  it('includes caller_metadata in the request body when provided', async () => {
+    let capturedOpts;
+    fetchMock = mock.method(globalThis, 'fetch', async (url, opts) => {
+      capturedOpts = opts;
+      return jsonResponse({
+        results: [{ email: 'dev@example.com', compliant: true }],
+      });
+    });
+
+    await runGateMode({
+      inputs: baseInputs,
+      provider: noopProvider,
+      callerMetadata: { source: 'SOURCE_GITHUB', aspen_version: '1.2.3' },
+    });
+
+    assert.deepEqual(JSON.parse(capturedOpts.body), {
+      emails: ['dev@example.com'],
+      caller_metadata: { source: 'SOURCE_GITHUB', aspen_version: '1.2.3' },
+    });
   });
 
   it('fails when committerEmail is missing, even if username is present', async () => {

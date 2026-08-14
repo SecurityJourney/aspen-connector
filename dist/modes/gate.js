@@ -7,14 +7,13 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_ERROR_BODY_LENGTH = 500;
 const GATE_STATUS_PATH = '/integrations/learner-compliance/status';
 
-// AssignmentStatus values (see learner_compliance.proto) treated as "done"
-// when summarizing which required assignments are blocking a fallback reason.
-const COMPLETE_STATUSES = new Set([
-  'ASSIGNMENT_STATUS_PASSED',
+// AssignmentStatus values that don't block the gate.
+const COMPLIANT_STATUSES = new Set([
   'ASSIGNMENT_STATUS_COMPLETED',
+  'ASSIGNMENT_STATUS_NOT_ASSIGNED',
 ]);
 
-export async function runGateMode({ inputs, provider }) {
+export async function runGateMode({ inputs, provider, callerMetadata }) {
   const { apiToken, apiDomain, failOpen, commentOnFailure, metadata } = inputs;
 
   if (!metadata.committerEmail) {
@@ -34,7 +33,10 @@ export async function runGateMode({ inputs, provider }) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiToken}`,
       },
-      body: JSON.stringify({ emails: [metadata.committerEmail] }),
+      body: JSON.stringify({
+        emails: [metadata.committerEmail],
+        caller_metadata: callerMetadata,
+      }),
     });
   } catch (e) {
     const reason =
@@ -87,6 +89,11 @@ export async function runGateMode({ inputs, provider }) {
     );
   }
 
+  warnAboutNotAssignedAssignments(
+    metadata.committerEmail,
+    result.requiredAssignments,
+  );
+
   if (result.compliant) {
     console.log('[aspen-connector] Gate check passed');
     return data;
@@ -113,9 +120,23 @@ async function postGateComment(provider, prNumber, reason) {
   }
 }
 
+function warnAboutNotAssignedAssignments(committerEmail, requiredAssignments) {
+  const notAssigned = (requiredAssignments ?? []).filter(
+    (a) => a.status === 'ASSIGNMENT_STATUS_NOT_ASSIGNED',
+  );
+  if (notAssigned.length === 0) return;
+
+  const titles = notAssigned
+    .map((a) => a.title || `assignment ${a.id}`)
+    .join(', ');
+  console.warn(
+    `[aspen-connector] ::warning::Required assignment not assigned to ${committerEmail}: ${titles}`,
+  );
+}
+
 function summarizeIncompleteAssignments(requiredAssignments) {
   const incomplete = (requiredAssignments ?? []).filter(
-    (a) => !COMPLETE_STATUSES.has(a.status),
+    (a) => !COMPLIANT_STATUSES.has(a.status),
   );
   if (incomplete.length === 0) return 'not compliant';
 
