@@ -34,7 +34,7 @@ inputs:
     required: false
     default: '[]'
   enforce_gate:
-    description: 'Enable the learner-compliance gate check (Mode E, or pre-check before Modes A-D).'
+    description: 'Enable the external access control gate check (Mode E, or pre-check before Modes A-D).'
     required: false
     default: 'false'
   gate_fail_open:

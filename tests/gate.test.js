@@ -297,7 +297,7 @@ describe('runGateMode', () => {
 
     const url = new URL(capturedUrl);
     assert.equal(url.origin, 'https://api.securityjourney.com');
-    assert.equal(url.pathname, '/integrations/learner-compliance/status');
+    assert.equal(url.pathname, '/integrations/external-access-control/status');
     assert.equal(capturedOpts.method, 'POST');
     assert.deepEqual(JSON.parse(capturedOpts.body), {
       emails: ['dev@example.com'],
