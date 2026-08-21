@@ -1,11 +1,11 @@
 /**
- * Gate mode: checks the committer's learner-compliance status and fails CI
- * when they're not compliant with the tenant's configured gate.
+ * Gate mode: checks the committer's external access control status and fails
+ * CI when they're not compliant with the tenant's configured gate.
  */
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_ERROR_BODY_LENGTH = 500;
-const GATE_STATUS_PATH = '/integrations/learner-compliance/status';
+const GATE_STATUS_PATH = '/integrations/external-access-control/status';
 
 // AssignmentStatus values that don't block the gate.
 const COMPLIANT_STATUSES = new Set([
