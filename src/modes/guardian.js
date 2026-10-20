@@ -3,7 +3,7 @@ import { join, basename } from 'path';
 import { exchangeTokenForJwt, deriveDirectDomain } from '../lib/token.js';
 import { callApiWithStreaming } from '../lib/stream.js';
 import { buildGitBlock } from '../lib/git.js';
-import { getInput } from '../inputs.js';
+import { getInput, parseBoolean } from '../inputs.js';
 
 /**
  * Guardian AI mode: streams updated instructions from the API and commits them back.
@@ -141,7 +141,9 @@ function resolveInstructionFile(filePath) {
 /**
  * Builds the commit message for the instruction file update.
  * Uses ASPEN_COMMIT_MESSAGE if set, otherwise falls back to the default.
- * Always ensures [skip ci] is present to prevent pipeline loops.
+ * Appends [skip ci] to prevent pipeline loops unless ASPEN_SKIP_CI=false — the
+ * caller then owns loop prevention (e.g. disable auto_commit when the run was
+ * triggered by its own commit-back).
  */
 function buildCommitMessage(prNumber) {
   const custom = getInput('commit_message');
@@ -151,7 +153,10 @@ function buildCommitMessage(prNumber) {
       ? `Update instructions via Guardian scan\n\nUpdated based on security scan results from MR/PR #${prNumber}`
       : 'Update instructions via Guardian scan');
 
-  if (!message.includes('[skip ci]')) {
+  if (
+    parseBoolean(getInput('skip_ci'), true) &&
+    !message.includes('[skip ci]')
+  ) {
     message += ' [skip ci]';
   }
 

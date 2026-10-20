@@ -56,10 +56,11 @@ mock.module('../src/lib/git.js', {
   },
 });
 
-// Mock inputs.js getInput — used only for commit_message
+// Mock inputs.js getInput — used for commit_message and skip_ci
+const mockInputs = {};
 mock.module('../src/inputs.js', {
   namedExports: {
-    getInput: (_name) => '',
+    getInput: (name) => mockInputs[name] ?? '',
     getRequiredInput: (_name) => 'required-value',
     parseBoolean: (value, def) => (value ? value.trim() !== 'false' : def),
     parseJsonArray: (raw, _field) => {
@@ -309,6 +310,55 @@ describe('runGuardianMode — Mode A (scan results file)', () => {
     });
 
     assert.ok(committed, 'commitFile should have been called');
+  });
+
+  async function commitMessageFor(inputs) {
+    Object.assign(mockInputs, inputs);
+    mockApiResponse = { updated_instructions: '# Updated Instructions' };
+    let message;
+    try {
+      await runGuardianMode({
+        inputs: {
+          scanResultsPath: SCAN_PATH,
+          instructionFilePath: INSTR_PATH,
+          scannerType: null,
+          apiToken: 'tok',
+          apiDomain: 'my.example.com',
+          autoCommit: true,
+          excludeGitMetadataFields: [],
+        },
+        provider: {
+          getMetadata: fakeProvider.getMetadata,
+          commitFile: async (args) => {
+            message = args.message;
+          },
+        },
+        callerMetadata: {},
+      });
+    } finally {
+      for (const k of Object.keys(inputs)) delete mockInputs[k];
+    }
+    return message;
+  }
+
+  it('appends [skip ci] to the commit-back message by default', async () => {
+    assert.match(await commitMessageFor({}), /\[skip ci\]$/);
+  });
+
+  it('omits [skip ci] when skip_ci=false', async () => {
+    const message = await commitMessageFor({ skip_ci: 'false' });
+    assert.ok(message, 'commitFile should have been called');
+    assert.doesNotMatch(message, /\[skip ci\]/);
+  });
+
+  it('omits [skip ci] from a custom message when skip_ci=false', async () => {
+    assert.equal(
+      await commitMessageFor({
+        skip_ci: 'false',
+        commit_message: 'custom msg',
+      }),
+      'custom msg',
+    );
   });
 
   it('skips commit when autoCommit=false even if updated_instructions present', async () => {

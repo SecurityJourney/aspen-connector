@@ -29,6 +29,14 @@ inputs:
   commit_message:
     description: 'Custom commit message for the instruction file update'
     required: false
+  skip_ci:
+    description: 'Append [skip ci] to the commit-back message so the push does not re-trigger CI. Set false when github_token is a GitHub App token and the commit must get its own required-check runs.'
+    required: false
+    default: 'true'
+  github_token:
+    description: 'Token for commit-back and PR comments. Defaults to GITHUB_TOKEN, whose pushes never trigger workflows; pass a GitHub App token so the commit-back gets its own CI runs.'
+    required: false
+    default: ${{ github.token }}
   exclude_git_metadata_fields:
     description: 'all to disable CWE recording, or JSON array of fields to omit: ["repo","username","prNumber"]'
     required: false
@@ -68,8 +76,9 @@ runs:
         ASPEN_SCANNER_TYPE: ${{ inputs.scanner_type }}
         ASPEN_AUTO_COMMIT: ${{ inputs.auto_commit }}
         ASPEN_COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        ASPEN_SKIP_CI: ${{ inputs.skip_ci }}
         ASPEN_EXCLUDE_GIT_METADATA_FIELDS: ${{ inputs.exclude_git_metadata_fields }}
         ASPEN_ENFORCE_GATE: ${{ inputs.enforce_gate }}
         ASPEN_GATE_FAIL_OPEN: ${{ inputs.gate_fail_open }}
         ASPEN_GATE_COMMENT_ON_FAILURE: ${{ inputs.gate_comment_on_failure }}
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}

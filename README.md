@@ -141,7 +141,8 @@ To comment on merge requests, set `GITLAB_TOKEN` (a project access token with `a
 | `ASPEN_CWES`                        | Modes B, C | —                         | JSON array of CWE IDs, e.g. `'["CWE-79","CWE-89"]'`                                                                                                                                                    |
 | `ASPEN_SCANNER_TYPE`                | No         | auto-detected             | Override scanner detection: `snyk`, `bandit`, `sonarqube`, `semgrep`, etc.                                                                                                                             |
 | `ASPEN_AUTO_COMMIT`                 | No         | `true`                    | Set `false` to skip writing and committing the updated instruction file (Modes A, B)                                                                                                                   |
-| `ASPEN_COMMIT_MESSAGE`              | No         | auto-generated            | Custom commit message for the instruction file update. `[skip ci]` is appended automatically if not present.                                                                                           |
+| `ASPEN_COMMIT_MESSAGE`              | No         | auto-generated            | Custom commit message for the instruction file update. `[skip ci]` is appended automatically if not present, unless `ASPEN_SKIP_CI` is `false`.                                                        |
+| `ASPEN_SKIP_CI`                     | No         | `true`                    | Set `false` to leave `[skip ci]` off the commit-back so the push re-triggers CI. Only safe with a loop guard (e.g. disable `ASPEN_AUTO_COMMIT` when the run was triggered by the commit-back itself).  |
 | `ASPEN_EXCLUDE_GIT_METADATA_FIELDS` | No         | `[]`                      | `all` to disable CWE recording entirely, or a JSON array of fields to omit: `"repo"`, `"username"`, `"prNumber"`                                                                                       |
 | `ASPEN_ENFORCE_GATE`                | No         | `false`                   | Enables the external access control gate check. Can run standalone (Mode E) or as a pre-check before Modes A-D.                                                                                        |
 | `ASPEN_GATE_FAIL_OPEN`              | No         | `true`                    | If `false`, blocks CI when the gate endpoint reports an internal error, times out, or returns something unreadable — this only covers our own infrastructure failing, not a real non-compliant result. |
@@ -277,6 +278,17 @@ The connector configures git identity automatically (`aspen-bot` by default, or 
 ### GitHub Actions — `GITHUB_TOKEN`
 
 The action uses `GITHUB_TOKEN` automatically — no configuration needed. Set `contents: write` on the job and the action handles the rest.
+
+Pushes made with `GITHUB_TOKEN` never trigger other workflows, so if a required status check runs on `pull_request`, the commit-back leaves the PR waiting on a check that will never report. Pass a GitHub App token as `github_token` and set `skip_ci: 'false'` so the commit-back gets its own runs — and turn `auto_commit` off when the run was triggered by that app, or each AI rewrite re-triggers the next:
+
+```yaml
+- uses: SecurityJourney/aspen-connector@trunk
+  with:
+    api_token: ${{ secrets.SECURITYJOURNEY_TOKEN }}
+    github_token: ${{ steps.app-token.outputs.token }}
+    skip_ci: 'false'
+    auto_commit: ${{ github.actor != 'my-app[bot]' }}
+```
 
 To override the git identity used for the commit, pass environment variables on the step:
 
